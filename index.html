@@ -662,6 +662,13 @@
           <div class="palette" aria-label="メモの色">
             <button
               class="swatch"
+              data-color="var(--color-white)"
+              style="background: var(--color-white)"
+              title="白"
+              aria-label="白"
+            ></button>
+            <button
+              class="swatch"
               data-color="var(--color-yellow-400)"
               style="background: var(--color-yellow-400)"
               title="黄色"
@@ -781,7 +788,7 @@
           view = { x: 0, y: 0, z: 1 },
           selection = new Set(),
           tool = "select",
-          color = "var(--color-yellow-400)",
+          color = "var(--color-white)",
           gesture = null,
           space = false,
           editing = null,
@@ -2256,6 +2263,7 @@
           finishEdit();
           checkpoint();
           nodes = [];
+          color = "var(--color-white)";
           selection.clear();
           view = { x: 0, y: 0, z: 1 };
           gesture = null;
