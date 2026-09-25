@@ -409,22 +409,25 @@
       .zoom {
         position: absolute;
         z-index: 10;
-        top: 24px;
-        right: 24px;
+        bottom: calc(100% + 8px);
+        right: 0;
         display: flex;
         align-items: center;
-        padding: 4px;
+        padding: 2px;
+        color: var(--color-gray-700);
+        border-color: var(--color-gray-200);
+        border-radius: 8px;
       }
       .zoom button {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        font-size: 18px;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        font-size: 16px;
       }
       .zoom span {
-        width: 48px;
+        width: 40px;
         text-align: center;
-        font-size: 12px;
+        font-size: 11px;
         font-variant-numeric: tabular-nums;
       }
 
@@ -538,10 +541,6 @@
         }
         .primary-tools > * {
           flex: 1;
-        }
-        .zoom {
-          top: 16px;
-          right: 16px;
         }
       }
       @media (max-width: 390px) {
@@ -712,10 +711,10 @@
           </button>
         </div>
       </nav>
-    </div>
-    <div class="zoom">
-      <button id="minus" aria-label="縮小">−</button><span id="scale">100%</span
-      ><button id="plus" aria-label="拡大">＋</button>
+      <div class="zoom" role="group" aria-label="表示倍率">
+        <button id="minus" aria-label="縮小">−</button><span id="scale">100%</span
+        ><button id="plus" aria-label="拡大">＋</button>
+      </div>
     </div>
     <div
       id="editor"
