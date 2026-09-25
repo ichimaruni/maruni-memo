@@ -4,7 +4,7 @@
 
 ## 使う
 
-https://saikai-102.github.io/maruni-memo/
+https://ichimaruni.github.io/maruni-memo/
 
 メモは利用中のブラウザの localStorage に保存されます。サーバーへの送信や端末間の同期はありません。ブラウザのサイトデータを削除するとメモも消えます。
 
