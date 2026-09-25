@@ -1,0 +1,2276 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>メモ</title>
+    <style>
+      :root {
+        color-scheme: light;
+
+        /* DADS primitive colors. No hue is assigned as the main color here. */
+        --color-blue-50: #e8f1fe;
+        --color-blue-100: #d9e6ff;
+        --color-blue-200: #c5d7fb;
+        --color-blue-300: #9db7f9;
+        --color-blue-400: #7096f8;
+        --color-blue-500: #4979f5;
+        --color-blue-600: #3460fb;
+        --color-blue-700: #264af4;
+        --color-blue-800: #0031d8;
+        --color-blue-900: #0017c1;
+        --color-blue-1000: #00118f;
+        --color-blue-1100: #000071;
+        --color-blue-1200: #000060;
+
+        --color-light-blue-50: #f0f9ff;
+        --color-light-blue-100: #dcf0ff;
+        --color-light-blue-200: #c0e4ff;
+        --color-light-blue-300: #97d3ff;
+        --color-light-blue-400: #57b8ff;
+        --color-light-blue-500: #39abff;
+        --color-light-blue-600: #008bf2;
+        --color-light-blue-700: #0877d7;
+        --color-light-blue-800: #0066be;
+        --color-light-blue-900: #0055ad;
+        --color-light-blue-1000: #00428c;
+        --color-light-blue-1100: #00316a;
+        --color-light-blue-1200: #00234b;
+
+        --color-cyan-50: #e9f7f9;
+        --color-cyan-100: #c8f8ff;
+        --color-cyan-200: #99f2ff;
+        --color-cyan-300: #79e2f2;
+        --color-cyan-400: #2bc8e4;
+        --color-cyan-500: #01b7d6;
+        --color-cyan-600: #00a3bf;
+        --color-cyan-700: #008da6;
+        --color-cyan-800: #008299;
+        --color-cyan-900: #006f83;
+        --color-cyan-1000: #006173;
+        --color-cyan-1100: #004c59;
+        --color-cyan-1200: #003741;
+
+        --color-green-50: #e6f5ec;
+        --color-green-100: #c2e5d1;
+        --color-green-200: #9bd4b5;
+        --color-green-300: #71c598;
+        --color-green-400: #51b883;
+        --color-green-500: #2cac6e;
+        --color-green-600: #259d63;
+        --color-green-700: #1d8b56;
+        --color-green-800: #197a4b;
+        --color-green-900: #115a36;
+        --color-green-1000: #0c472a;
+        --color-green-1100: #08351f;
+        --color-green-1200: #032213;
+
+        --color-lime-50: #ebfad9;
+        --color-lime-100: #d0f5a2;
+        --color-lime-200: #c0f354;
+        --color-lime-300: #ade830;
+        --color-lime-400: #9ddd15;
+        --color-lime-500: #8cc80c;
+        --color-lime-600: #7eb40d;
+        --color-lime-700: #6fa104;
+        --color-lime-800: #618e00;
+        --color-lime-900: #507500;
+        --color-lime-1000: #3e5a00;
+        --color-lime-1100: #2c4100;
+        --color-lime-1200: #1e2d00;
+
+        --color-yellow-50: #fbf5e0;
+        --color-yellow-100: #fff0b3;
+        --color-yellow-200: #ffe380;
+        --color-yellow-300: #ffd43d;
+        --color-yellow-400: #ffc700;
+        --color-yellow-500: #ebb700;
+        --color-yellow-600: #d2a400;
+        --color-yellow-700: #b78f00;
+        --color-yellow-800: #a58000;
+        --color-yellow-900: #927200;
+        --color-yellow-1000: #806300;
+        --color-yellow-1100: #6e5600;
+        --color-yellow-1200: #604b00;
+
+        --color-orange-50: #ffeee2;
+        --color-orange-100: #ffdfca;
+        --color-orange-200: #ffc199;
+        --color-orange-300: #ffa66d;
+        --color-orange-400: #ff8d44;
+        --color-orange-500: #ff7628;
+        --color-orange-600: #fb5b01;
+        --color-orange-700: #e25100;
+        --color-orange-800: #c74700;
+        --color-orange-900: #ac3e00;
+        --color-orange-1000: #8b3200;
+        --color-orange-1100: #6d2700;
+        --color-orange-1200: #541e00;
+
+        --color-red-50: #fdeeee;
+        --color-red-100: #ffdada;
+        --color-red-200: #ffbbbb;
+        --color-red-300: #ff9696;
+        --color-red-400: #ff7171;
+        --color-red-500: #ff5454;
+        --color-red-600: #fe3939;
+        --color-red-700: #fa0000;
+        --color-red-800: #ec0000;
+        --color-red-900: #ce0000;
+        --color-red-1000: #a90000;
+        --color-red-1100: #850000;
+        --color-red-1200: #620000;
+
+        --color-magenta-50: #f3e5f4;
+        --color-magenta-100: #ffd0ff;
+        --color-magenta-200: #ffaeff;
+        --color-magenta-300: #ff8eff;
+        --color-magenta-400: #f661f6;
+        --color-magenta-500: #f137f1;
+        --color-magenta-600: #db00db;
+        --color-magenta-700: #c000c0;
+        --color-magenta-800: #aa00aa;
+        --color-magenta-900: #8b008b;
+        --color-magenta-1000: #6c006c;
+        --color-magenta-1100: #500050;
+        --color-magenta-1200: #3b003b;
+
+        --color-purple-50: #f1eafa;
+        --color-purple-100: #ecddff;
+        --color-purple-200: #ddc2ff;
+        --color-purple-300: #cda6ff;
+        --color-purple-400: #bb87ff;
+        --color-purple-500: #a565f8;
+        --color-purple-600: #8843e1;
+        --color-purple-700: #6f23d0;
+        --color-purple-800: #5c10be;
+        --color-purple-900: #5109ad;
+        --color-purple-1000: #41048e;
+        --color-purple-1100: #30016c;
+        --color-purple-1200: #21004b;
+
+        --color-white: #ffffff;
+        --color-black: #000000;
+        --color-gray-50: #f2f2f2;
+        --color-gray-100: #e6e6e6;
+        --color-gray-200: #cccccc;
+        --color-gray-300: #b3b3b3;
+        --color-gray-400: #999999;
+        --color-gray-420: #949494;
+        --color-gray-500: #7f7f7f;
+        --color-gray-536: #767676;
+        --color-gray-600: #666666;
+        --color-gray-700: #4d4d4d;
+        --color-gray-800: #333333;
+        --color-gray-900: #1a1a1a;
+
+        --font-family-sans:
+          "BIZ UDPGothic", "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo,
+          sans-serif;
+        --font-weight-regular: 400;
+        --font-weight-bold: 700;
+        --font-size-xs: 12px;
+        --font-size-sm: 14px;
+        --font-size-md: 16px;
+        --font-size-lg: 20px;
+        --font-size-xl: 24px;
+        --font-size-2xl: 32px;
+        --font-size-display: 40px;
+        --line-height-heading: 1.4;
+        --line-height-body: 1.7;
+        --line-height-note: 1.5;
+
+        --space-1: 8px;
+        --space-2: 16px;
+        --space-3: 24px;
+        --space-4: 32px;
+        --space-5: 40px;
+        --space-6: 48px;
+        --space-8: 64px;
+
+        --radius-none: 0;
+        --radius-small: 8px;
+        --radius-medium: 16px;
+        --radius-full: 9999px;
+
+        --elevation-0: none;
+        --elevation-1: 0 2px 8px rgba(0, 0, 0, 0.12);
+        --elevation-2: 0 8px 24px rgba(0, 0, 0, 0.16);
+      }
+
+      /* Board roles: neutral workspace, black content, purple interaction state. */
+      :root {
+        --board-bg: color-mix(
+          in srgb,
+          var(--color-white) 55%,
+          var(--color-gray-50)
+        );
+        --surface: var(--color-white);
+        --ink: var(--color-black);
+        --muted: var(--color-gray-600);
+        --control-border: var(--color-gray-420);
+        --focus: var(--color-purple-700);
+        --active-bg: var(--color-purple-50);
+        --active-ink: var(--color-purple-800);
+        --note-font:
+          -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+        font-family: var(--note-font);
+        color: var(--ink);
+        font-synthesis: none;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: var(--board-bg);
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      button:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 3px;
+      }
+      button:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      button svg {
+        pointer-events: none;
+      }
+      #canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        user-select: none;
+      }
+      #world [data-id] {
+        cursor: grab;
+      }
+      #world foreignObject {
+        cursor: text;
+      }
+      .note-content,
+      #editor {
+        padding: 16px;
+        font: 16px/1.6 var(--note-font);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .selection {
+        pointer-events: none;
+      }
+      body.dragging,
+      body.dragging * {
+        cursor: grabbing !important;
+      }
+
+      /* Text and fit are the primary actions; remaining tools are compact. */
+      .dock {
+        position: absolute;
+        z-index: 10;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: calc(100% - 24px);
+      }
+      .toolbar,
+      .zoom,
+      #formatbar {
+        background: var(--surface);
+        border: 1px solid var(--control-border);
+        border-radius: 12px;
+      }
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px;
+        box-shadow: var(--elevation-1);
+      }
+      .primary-tools,
+      .secondary-tools {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .primary-tools {
+        gap: 8px;
+      }
+      .tool {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 44px;
+        border-radius: 8px;
+        flex-shrink: 0;
+      }
+      .tool svg {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .tool:hover:not(:disabled),
+      .zoom button:hover,
+      #new:hover {
+        background: var(--color-gray-50);
+      }
+      .tool.active,
+      #formatbar button[aria-pressed="true"] {
+        background: var(--active-bg);
+        color: var(--active-ink);
+      }
+      .tool.primary-tool,
+      .quick-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: auto;
+        height: 48px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .tool.primary-tool {
+        min-width: 120px;
+        background: var(--color-purple-700);
+        color: var(--color-white);
+      }
+      .tool.primary-tool:hover,
+      .tool.primary-tool.active {
+        background: var(--color-purple-800);
+        color: var(--color-white);
+      }
+      .quick-action svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #home {
+        min-width: 112px;
+        background: var(--active-bg);
+        color: var(--active-ink);
+      }
+      #home:hover {
+        background: var(--color-purple-100);
+      }
+      #new {
+        padding: 0 10px;
+        font-size: 13px;
+        height: 44px;
+      }
+      .divider {
+        height: 24px;
+        width: 1px;
+        background: var(--color-gray-200);
+        margin: 0 4px;
+        flex-shrink: 0;
+      }
+      .palette {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 4px;
+      }
+      .swatch {
+        width: 22px;
+        height: 22px;
+        border: 1px solid var(--ink);
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .swatch.active {
+        outline: 2px solid var(--focus);
+        outline-offset: 3px;
+      }
+      .zoom {
+        position: absolute;
+        z-index: 10;
+        top: 24px;
+        right: 24px;
+        display: flex;
+        align-items: center;
+        padding: 4px;
+      }
+      .zoom button {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        font-size: 18px;
+      }
+      .zoom span {
+        width: 48px;
+        text-align: center;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Screen-space overlays keep border hit areas usable at every zoom. */
+      #grab-layer,
+      #component-actions {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 6;
+        overflow: hidden;
+      }
+      #grab-layer line {
+        pointer-events: stroke;
+        cursor: grab;
+      }
+      .duplicate-button {
+        position: absolute;
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        pointer-events: auto;
+        border: 1px solid var(--control-border);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+      }
+      .duplicate-button:hover {
+        background: var(--active-bg);
+        color: var(--active-ink);
+      }
+      .duplicate-button:active {
+        background: var(--color-purple-100);
+        color: var(--active-ink);
+      }
+      .duplicate-button svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      #editor {
+        position: absolute;
+        display: none;
+        min-height: 65px;
+        overflow: auto;
+        border: 2px solid var(--focus);
+        border-radius: 8px;
+        padding: 14px;
+        outline: none;
+        transform-origin: top left;
+        z-index: 5;
+      }
+      #formatbar {
+        display: none;
+        position: absolute;
+        z-index: 8;
+        gap: 4px;
+        padding: 4px;
+        box-shadow: var(--elevation-1);
+      }
+      #formatbar button {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      #formatbar button:hover {
+        background: var(--active-bg);
+        color: var(--active-ink);
+      }
+      #world [data-highlight],
+      #editor [style*="background-color: rgb(255, 212, 61)"],
+      #editor [style*="background-color: rgb(255, 228, 120)"] {
+        color: var(--ink) !important;
+      }
+      #world [data-highlight] {
+        background: var(--color-yellow-300) !important;
+      }
+      #toast {
+        display: none;
+        position: absolute;
+        z-index: 20;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: calc(100% - 32px);
+        padding: 12px 16px;
+        border-radius: 8px;
+        background: var(--ink);
+        color: var(--surface);
+        font-size: 13px;
+      }
+      @media (max-width: 760px) {
+        .dock {
+          bottom: 16px;
+          max-width: calc(100% - 16px);
+        }
+        .toolbar {
+          flex-direction: column;
+          gap: 8px;
+        }
+        .primary-tools {
+          width: 100%;
+        }
+        .primary-tools > * {
+          flex: 1;
+        }
+        .zoom {
+          top: 16px;
+          right: 16px;
+        }
+      }
+      @media (max-width: 390px) {
+        .toolbar {
+          padding: 6px;
+        }
+        .secondary-tools {
+          gap: 2px;
+        }
+        .tool {
+          width: 32px;
+        }
+        .palette {
+          gap: 7px;
+        }
+        .swatch {
+          width: 20px;
+          height: 20px;
+        }
+        .divider {
+          margin: 0 2px;
+        }
+        #new {
+          padding: 0 6px;
+          gap: 4px;
+        }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        button {
+          transition:
+            background-color 0.12s,
+            color 0.12s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg id="canvas" aria-label="メモボード">
+      <defs>
+        <marker
+          id="arrowhead"
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="14"
+          markerHeight="14"
+          markerUnits="userSpaceOnUse"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 1 1 L 9 5 L 1 9"
+            fill="none"
+            stroke="var(--color-black)"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+      <rect width="100%" height="100%" fill="var(--board-bg)" />
+      <g id="world"></g>
+    </svg>
+
+    <svg id="grab-layer" aria-hidden="true"></svg>
+    <div id="component-actions" aria-label="各メモの操作"></div>
+
+    <div class="dock">
+      <nav class="toolbar" aria-label="描画ツール">
+        <div class="primary-tools">
+          <button
+            class="tool primary-tool"
+            data-tool="text"
+            title="テキスト (T)"
+            aria-label="テキスト"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M5 6V4h14v2M12 4v16M8 20h8" />
+            </svg>
+            <span>テキスト</span></button
+          ><button
+            id="home"
+            class="quick-action"
+            title="全体を表示（Shift+1）"
+            aria-label="全体を表示"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5" /></svg
+            ><span>全体表示</span>
+          </button>
+        </div>
+        <div class="secondary-tools">
+          <button
+            class="tool active"
+            data-tool="select"
+            title="選択・移動 (V)"
+            aria-label="選択・移動"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="m6 3 13 10-7 1-3 7z" />
+            </svg></button
+          ><button
+            class="tool"
+            data-tool="rect"
+            title="四角 (R)"
+            aria-label="四角"
+          >
+            <svg viewBox="0 0 24 24">
+              <rect x="4" y="4" width="16" height="16" rx="1" />
+            </svg></button
+          ><button
+            class="tool"
+            data-tool="arrow"
+            title="矢印 (A)"
+            aria-label="矢印"
+          >
+            <svg viewBox="0 0 24 24"><path d="M4 20 20 4M8 4h12v12" /></svg>
+          </button>
+          <div class="divider"></div>
+          <div class="palette" aria-label="メモの色">
+            <button
+              class="swatch"
+              data-color="var(--color-yellow-400)"
+              style="background: var(--color-yellow-400)"
+              title="黄色"
+              aria-label="黄色"
+            ></button
+            ><button
+              class="swatch"
+              data-color="var(--color-red-300)"
+              style="background: var(--color-red-300)"
+              title="赤"
+              aria-label="赤"
+            ></button
+            ><button
+              class="swatch"
+              data-color="var(--color-green-300)"
+              style="background: var(--color-green-300)"
+              title="緑"
+              aria-label="緑"
+            ></button
+            ><button
+              class="swatch"
+              data-color="var(--color-blue-300)"
+              style="background: var(--color-blue-300)"
+              title="青"
+              aria-label="青"
+            ></button>
+          </div>
+          <div class="divider"></div>
+          <button
+            class="tool"
+            id="delete"
+            title="削除 (Delete)"
+            aria-label="選択したメモを削除"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7" />
+            </svg></button
+          ><button
+            id="new"
+            class="quick-action"
+            title="新しいボード（⌘Zで取り消し可能）"
+            aria-label="新規ボード"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" /></svg
+            ><span>新規</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+    <div class="zoom">
+      <button id="minus" aria-label="縮小">−</button><span id="scale">100%</span
+      ><button id="plus" aria-label="拡大">＋</button>
+    </div>
+    <div
+      id="editor"
+      contenteditable="true"
+      role="textbox"
+      aria-multiline="true"
+      aria-label="メモを編集"
+      spellcheck="false"
+    ></div>
+    <div id="formatbar" role="toolbar" aria-label="文字の書式">
+      <button data-format="bold" title="太字（⌘B / Ctrl+B）" aria-label="太字">
+        <b>B</b></button
+      ><button
+        data-format="italic"
+        title="斜体（⌘I / Ctrl+I）"
+        aria-label="斜体"
+      >
+        <i>I</i></button
+      ><button
+        data-format="underline"
+        title="下線（⌘U / Ctrl+U）"
+        aria-label="下線"
+      >
+        <u>U</u></button
+      ><button
+        data-format="highlight"
+        title="ハイライト（⌘Shift+H / Ctrl+Shift+H）"
+        aria-label="ハイライト"
+      >
+        <span style="background: var(--color-yellow-300); padding: 0 2px"
+          >H</span
+        ></button
+      ><button
+        data-format="removeFormat"
+        title="書式をクリア（⌘\ / Ctrl+\）"
+        aria-label="書式をクリア"
+      >
+        T̸
+      </button>
+    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script>
+      (() => {
+        "use strict";
+        // Configuration and state. The v1 storage key preserves existing boards.
+
+        const $ = (s) => document.querySelector(s),
+          $$ = (s) => [...document.querySelectorAll(s)],
+          NS = "http://www.w3.org/2000/svg",
+          KEY = "yohaku-board-v1";
+        const CONFIG = Object.freeze({
+          textWidth: 480,
+          textHeight: 679,
+          boxWidth: 220,
+          boxHeight: 160,
+          duplicateGap: 32,
+          historyLimit: 100,
+          snapPixels: 7,
+          anchorPixels: 14,
+          minZoom: 0.1,
+          maxZoom: 5,
+        });
+        let nodes = [],
+          view = { x: 0, y: 0, z: 1 },
+          selection = new Set(),
+          tool = "select",
+          color = "var(--color-yellow-400)",
+          gesture = null,
+          space = false,
+          editing = null,
+          history = [],
+          future = [];
+        const clone = (x) => JSON.parse(JSON.stringify(x)),
+          chosen = () => nodes.filter((n) => selection.has(n.id)),
+          typing = () =>
+            document.activeElement.isContentEditable ||
+            ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName),
+          uid = () => crypto.randomUUID();
+
+        function createNode(type, point, text = "") {
+          const node = {
+            id: uid(),
+            type,
+            x: point.x,
+            y: point.y,
+            w: type === "text" ? CONFIG.textWidth : CONFIG.boxWidth,
+            h: type === "text" ? CONFIG.textHeight : CONFIG.boxHeight,
+            text,
+            color,
+          };
+          if (type === "arrow") {
+            node.x2 = point.x;
+            node.y2 = point.y;
+          }
+          if (text)
+            node.h = Math.max(node.h, text.split("\n").length * 26 + 32);
+          return node;
+        }
+
+        // Palette and persistence.
+        function tokenValue(name) {
+          return getComputedStyle(document.documentElement)
+            .getPropertyValue(name)
+            .trim();
+        }
+        function isHighlightColor(v) {
+          return [
+            "rgb(255, 228, 120)",
+            "rgb(255, 212, 61)",
+            tokenValue("--color-yellow-300"),
+          ].includes(v);
+        }
+        function noteInk(n) {
+          if (n.type !== "rect") return "var(--color-black)";
+          let c = n.color || "",
+            match = c.match(/^var\((--color-[\w-]+)\)$/);
+          if (match) c = tokenValue(match[1]);
+          if (!/^#[0-9a-f]{6}$/i.test(c)) return "var(--color-black)";
+          let rgb = [1, 3, 5]
+              .map((i) => parseInt(c.slice(i, i + 2), 16) / 255)
+              .map((v) =>
+                v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4,
+              ),
+            l = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+          return (l + 0.05) / 0.05 >= 4.5
+            ? "var(--color-black)"
+            : "var(--color-white)";
+        }
+        function valid(ns) {
+          return (
+            Array.isArray(ns) &&
+            ns.length < 10000 &&
+            ns.every(
+              (n) =>
+                ["rect", "text", "arrow"].includes(n.type) &&
+                typeof n.id === "string" &&
+                Number.isFinite(n.x) &&
+                Number.isFinite(n.y) &&
+                (n.type === "arrow"
+                  ? Number.isFinite(n.x2) && Number.isFinite(n.y2)
+                  : Number.isFinite(n.w) &&
+                    n.w > 0 &&
+                    Number.isFinite(n.h) &&
+                    n.h > 0 &&
+                    typeof n.text === "string" &&
+                    (/^#[0-9a-f]{6}$/i.test(n.color) ||
+                      /^var\(--color-[a-z0-9-]+\)$/.test(n.color))),
+            )
+          );
+        }
+        function loadBoard() {
+          try {
+            let d = JSON.parse(localStorage.getItem(KEY));
+            if (d && valid(d.nodes)) {
+              nodes = d.nodes;
+              if (
+                d.view &&
+                ["x", "y", "z"].every((k) => Number.isFinite(d.view[k])) &&
+                d.view.z > 0
+              )
+                view = d.view;
+            }
+          } catch {}
+        }
+        let guides = [],
+          targetAnchor = null;
+        let toastTimer;
+        function toast(s) {
+          $("#toast").textContent = s;
+          $("#toast").style.display = "block";
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(
+            () => ($("#toast").style.display = "none"),
+            3000,
+          );
+        }
+        function save() {
+          try {
+            localStorage.setItem(KEY, JSON.stringify({ nodes, view }));
+          } catch {
+            toast("保存できません。ブラウザの保存容量を確認してください。");
+          }
+        }
+        function state() {
+          return JSON.stringify({ nodes, view, selection: [...selection] });
+        }
+        function checkpoint() {
+          history.push(state());
+          if (history.length > CONFIG.historyLimit) history.shift();
+          future = [];
+        }
+        function undo(redo = false) {
+          finishEdit();
+          let from = redo ? future : history,
+            to = redo ? history : future;
+          if (!from.length) return;
+          to.push(state());
+          let d = JSON.parse(from.pop());
+          nodes = d.nodes;
+          view = d.view || view;
+          selection = new Set(d.selection);
+          render();
+          save();
+        }
+        function el(tag, attrs, parent) {
+          let e = document.createElementNS(NS, tag);
+          for (let k in attrs) e.setAttribute(k, attrs[k]);
+          parent?.append(e);
+          return e;
+        }
+        function bounds(n) {
+          return n.type === "arrow"
+            ? {
+                x: Math.min(n.x, n.x2),
+                y: Math.min(n.y, n.y2),
+                w: Math.abs(n.x2 - n.x),
+                h: Math.abs(n.y2 - n.y),
+              }
+            : n;
+        }
+        function union(ns) {
+          let bs = ns.map(bounds),
+            x = Math.min(...bs.map((b) => b.x)),
+            y = Math.min(...bs.map((b) => b.y));
+          return {
+            x,
+            y,
+            w: Math.max(...bs.map((b) => b.x + b.w)) - x,
+            h: Math.max(...bs.map((b) => b.y + b.h)) - y,
+          };
+        }
+        // Rendering: SVG content, selection, snap guides, border hit areas, and actions.
+        function render() {
+          syncConnections();
+          const world = $("#world");
+          world.replaceChildren();
+          world.setAttribute(
+            "transform",
+            `translate(${view.x} ${view.y}) scale(${view.z})`,
+          );
+          $("#scale").textContent = Math.round(view.z * 100) + "%";
+          renderNodes(world);
+          renderSelection(world);
+          renderGuides(world);
+          renderGrabAreas();
+          renderComponentActions();
+          updateToolbarState();
+        }
+        function updateToolbarState() {
+          $$("[data-tool]").forEach((button) => {
+            const active = button.dataset.tool === tool;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-pressed", String(active));
+          });
+          const selectedColors = chosen()
+            .filter((n) => n.type === "rect")
+            .map((n) => n.color);
+          const activeColor =
+            selectedColors.length &&
+            selectedColors.every((c) => c === selectedColors[0])
+              ? selectedColors[0]
+              : color;
+          $$("[data-color]").forEach((button) => {
+            const active = button.dataset.color === activeColor;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-pressed", String(active));
+          });
+        }
+        function renderNodes(w) {
+          for (let n of nodes) {
+            let g = el("g", { "data-id": n.id }, w);
+            if (n.type === "arrow") {
+              el(
+                "line",
+                {
+                  x1: n.x,
+                  y1: n.y,
+                  x2: n.x2,
+                  y2: n.y2,
+                  stroke: "transparent",
+                  "stroke-width": 18,
+                },
+                g,
+              );
+              el(
+                "line",
+                {
+                  x1: n.x,
+                  y1: n.y,
+                  x2: n.x2,
+                  y2: n.y2,
+                  stroke: "var(--color-black)",
+                  "stroke-width": 4,
+                  "stroke-linecap": "round",
+                  "marker-end": "url(#arrowhead)",
+                },
+                g,
+              );
+            } else {
+              el(
+                "rect",
+                {
+                  x: n.x,
+                  y: n.y,
+                  width: n.w,
+                  height: n.h,
+                  rx: n.type === "rect" ? 2 : 8,
+                  fill: n.type === "rect" ? n.color : "var(--color-white)",
+                  stroke: "var(--color-black)",
+                },
+                g,
+              );
+              let f = el(
+                  "foreignObject",
+                  {
+                    x: n.x,
+                    y: n.y,
+                    width: n.w,
+                    height: n.h,
+                    "pointer-events": "none",
+                  },
+                  g,
+                ),
+                t = document.createElement("div");
+              t.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+              t.className = "note-content";
+              t.style.color = noteInk(n);
+              if (n.html) t.innerHTML = cleanHTML(n.html);
+              else t.textContent = n.text;
+              f.append(t);
+            }
+          }
+        }
+        function renderSelection(w) {
+          for (let n of chosen()) {
+            let b = bounds(n);
+            el(
+              "rect",
+              {
+                x: b.x - 4,
+                y: b.y - 4,
+                width: b.w + 8,
+                height: b.h + 8,
+                fill: "none",
+                stroke: "var(--color-purple-700)",
+                "stroke-width": 1.3 / view.z,
+                class: "selection",
+              },
+              w,
+            );
+            if (selection.size === 1) {
+              if (n.type === "arrow") {
+                for (let end of ["start", "end"])
+                  el(
+                    "circle",
+                    {
+                      cx: end === "start" ? n.x : n.x2,
+                      cy: end === "start" ? n.y : n.y2,
+                      r: 5 / view.z,
+                      fill: "var(--color-white)",
+                      stroke: "var(--color-purple-700)",
+                      "data-end": end,
+                      "data-handle": n.id,
+                      style: "cursor:crosshair",
+                    },
+                    w,
+                  );
+              } else
+                for (let [side, rx, ry, cursor] of [
+                  ["nw", 0, 0, "nwse"],
+                  ["n", 0.5, 0, "ns"],
+                  ["ne", 1, 0, "nesw"],
+                  ["e", 1, 0.5, "ew"],
+                  ["se", 1, 1, "nwse"],
+                  ["s", 0.5, 1, "ns"],
+                  ["sw", 0, 1, "nesw"],
+                  ["w", 0, 0.5, "ew"],
+                ])
+                  el(
+                    "rect",
+                    {
+                      x: n.x + n.w * rx - 5 / view.z,
+                      y: n.y + n.h * ry - 5 / view.z,
+                      width: 10 / view.z,
+                      height: 10 / view.z,
+                      rx: 2 / view.z,
+                      fill: "var(--color-white)",
+                      stroke: "var(--color-purple-700)",
+                      "data-handle": n.id,
+                      "data-side": side,
+                      style: `cursor:${cursor}-resize`,
+                    },
+                    w,
+                  );
+            }
+          }
+        }
+        function renderGuides(w) {
+          if (gesture?.type === "marquee" && gesture.box)
+            el(
+              "rect",
+              {
+                ...gesture.box,
+                width: gesture.box.w,
+                height: gesture.box.h,
+                fill: "var(--color-purple-50)",
+                stroke: "var(--color-purple-700)",
+                "stroke-width": 1 / view.z,
+                class: "selection",
+              },
+              w,
+            );
+          for (let l of guides)
+            el(
+              "line",
+              {
+                x1: l.x1,
+                y1: l.y1,
+                x2: l.x2,
+                y2: l.y2,
+                stroke: "var(--color-purple-700)",
+                "stroke-width": 1 / view.z,
+                "stroke-dasharray": `${4 / view.z} ${3 / view.z}`,
+                class: "selection",
+                "data-guide": "snap",
+              },
+              w,
+            );
+          if (targetAnchor)
+            el(
+              "circle",
+              {
+                cx: targetAnchor.x,
+                cy: targetAnchor.y,
+                r: 7 / view.z,
+                fill: "var(--color-purple-50)",
+                stroke: "var(--color-purple-700)",
+                "stroke-width": 2 / view.z,
+                class: "selection",
+              },
+              w,
+            );
+          $("#delete").disabled = !selection.size;
+        }
+        function renderGrabAreas() {
+          const grabs = $("#grab-layer");
+          grabs.replaceChildren();
+          if (tool === "select" || tool === "hand")
+            for (const n of nodes) {
+              if (n.type === "arrow") continue;
+              const x = view.x + n.x * view.z,
+                y = view.y + n.y * view.z,
+                w = n.w * view.z,
+                h = n.h * view.z;
+              for (const [a, b, c, d] of [
+                [x, y, x + w, y],
+                [x, y + h, x + w, y + h],
+                [x, y, x, y + h],
+                [x + w, y, x + w, y + h],
+              ]) {
+                let length = Math.hypot(c - a, d - b),
+                  gap = selection.has(n.id) ? 10 : 0;
+                for (const [lo, hi] of [
+                  [gap, length / 2 - gap],
+                  [length / 2 + gap, length - gap],
+                ]) {
+                  if (hi <= lo) continue;
+                  el(
+                    "line",
+                    {
+                      x1: a + ((c - a) * lo) / length,
+                      y1: b + ((d - b) * lo) / length,
+                      x2: a + ((c - a) * hi) / length,
+                      y2: b + ((d - b) * hi) / length,
+                      stroke: "transparent",
+                      "stroke-width": 16,
+                      "data-grab": n.id,
+                    },
+                    grabs,
+                  );
+                }
+              }
+            }
+        }
+        function renderComponentActions() {
+          const actions = $("#component-actions");
+          actions.replaceChildren();
+          for (const n of nodes) {
+            const b = bounds(n),
+              button = document.createElement("button");
+            button.className = "duplicate-button";
+            button.dataset.duplicate = n.id;
+            button.title = "複製";
+            button.setAttribute(
+              "aria-label",
+              { rect: "四角", text: "テキスト", arrow: "矢印" }[n.type] +
+                "を複製",
+            );
+            button.style.left = view.x + (b.x + b.w) * view.z - 36 + "px";
+            button.style.top = view.y + b.y * view.z - 44 + "px";
+            button.innerHTML =
+              '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg>';
+            button.onpointerdown = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            };
+            button.onkeydown = (e) => {
+              if (e.key === "Enter" || e.code === "Space") e.stopPropagation();
+            };
+            button.onclick = (e) => {
+              e.stopPropagation();
+              finishEdit();
+              selection = new Set([n.id]);
+              duplicate(true);
+            };
+            actions.append(button);
+          }
+        }
+        // Snap tolerance is in screen pixels, so alignment stays predictable at every zoom.
+        function snapBox(b, excluded, axes = { x: true, y: true }, points) {
+          const others = nodes
+              .filter((n) => n.type !== "arrow" && !excluded.has(n.id))
+              .map(bounds),
+            t = CONFIG.snapPixels / view.z;
+          let best = { x: { d: Infinity }, y: { d: Infinity } };
+          for (let axis of ["x", "y"]) {
+            if (!axes[axis]) continue;
+            let size = axis === "x" ? "w" : "h",
+              cross = axis === "x" ? "y" : "x",
+              cs = axis === "x" ? "h" : "w";
+            let moving = points?.[axis] || [
+              b[axis],
+              b[axis] + b[size] / 2,
+              b[axis] + b[size],
+            ];
+            function offer(d, v, a, z) {
+              if (Math.abs(d) < Math.abs(best[axis].d) && Math.abs(d) <= t)
+                best[axis] = { d, v, a, z };
+            }
+            for (let o of others)
+              for (let v of [o[axis], o[axis] + o[size] / 2, o[axis] + o[size]])
+                for (let m of moving)
+                  offer(
+                    v - m,
+                    v,
+                    Math.min(b[cross], o[cross]) - 12 / view.z,
+                    Math.max(b[cross] + b[cs], o[cross] + o[cs]) + 12 / view.z,
+                  );
+            // Continue equal spacing in a row/column, or center between two neighbors.
+            if (!points) {
+              let row = others
+                .filter(
+                  (o) =>
+                    o[cross] < b[cross] + b[cs] && o[cross] + o[cs] > b[cross],
+                )
+                .sort((a, z) => a[axis] - z[axis]);
+              for (let i = 0; i < row.length - 1; i++) {
+                let a = row[i],
+                  z = row[i + 1],
+                  gap = z[axis] - a[axis] - a[size];
+                if (gap < 0) continue;
+                for (let start of [
+                  z[axis] + z[size] + gap,
+                  a[axis] - gap - b[size],
+                  (a[axis] + a[size] + z[axis] - b[size]) / 2,
+                ])
+                  offer(
+                    start - b[axis],
+                    start,
+                    Math.min(a[cross], z[cross], b[cross]) - 12 / view.z,
+                    Math.max(
+                      a[cross] + a[cs],
+                      z[cross] + z[cs],
+                      b[cross] + b[cs],
+                    ) +
+                      12 / view.z,
+                  );
+              }
+            }
+            let q = best[axis];
+            if (Number.isFinite(q.d))
+              guides.push(
+                axis === "x"
+                  ? { x1: q.v, x2: q.v, y1: q.a, y2: q.z }
+                  : { y1: q.v, y2: q.v, x1: q.a, x2: q.z },
+              );
+          }
+          return {
+            dx: Number.isFinite(best.x.d) ? best.x.d : 0,
+            dy: Number.isFinite(best.y.d) ? best.y.d : 0,
+          };
+        }
+        function resizeNode(n, g, dx, dy, e) {
+          const o = g.original,
+            s = g.side;
+          let l = o.x,
+            r = o.x + o.w,
+            t = o.y,
+            b = o.y + o.h;
+          if (s.includes("w")) l = Math.min(r - 70, l + dx);
+          if (s.includes("e")) r = Math.max(l + 70, r + dx);
+          if (s.includes("n")) t = Math.min(b - 50, t + dy);
+          if (s.includes("s")) b = Math.max(t + 50, b + dy);
+          if (!e.metaKey && !e.ctrlKey && !e.shiftKey) {
+            let q = snapBox(
+              { x: l, y: t, w: r - l, h: b - t },
+              new Set([n.id]),
+              { x: /[we]/.test(s), y: /[ns]/.test(s) },
+              { x: [s.includes("w") ? l : r], y: [s.includes("n") ? t : b] },
+            );
+            if (s.includes("w")) l = Math.min(r - 70, l + q.dx);
+            if (s.includes("e")) r = Math.max(l + 70, r + q.dx);
+            if (s.includes("n")) t = Math.min(b - 50, t + q.dy);
+            if (s.includes("s")) b = Math.max(t + 50, b + q.dy);
+          }
+          if (e.shiftKey) {
+            let ratio = o.w / o.h;
+            if (s === "n" || s === "s") {
+              let w = (b - t) * ratio;
+              l = o.x + (o.w - w) / 2;
+              r = l + w;
+            } else {
+              let h = (r - l) / ratio;
+              if (s.includes("n")) t = b - h;
+              else b = t + h;
+            }
+          }
+          Object.assign(n, { x: l, y: t, w: r - l, h: b - t });
+        }
+        function anchorAt(p, exclude) {
+          let best = null,
+            limit = CONFIG.anchorPixels / view.z;
+          for (let n of [...nodes].reverse()) {
+            if (n.type !== "rect" || n.id === exclude) continue;
+            let candidates = [
+              { x: n.x, y: Math.max(n.y, Math.min(n.y + n.h, p.y)), rx: 0 },
+              {
+                x: n.x + n.w,
+                y: Math.max(n.y, Math.min(n.y + n.h, p.y)),
+                rx: 1,
+              },
+              { x: Math.max(n.x, Math.min(n.x + n.w, p.x)), y: n.y, ry: 0 },
+              {
+                x: Math.max(n.x, Math.min(n.x + n.w, p.x)),
+                y: n.y + n.h,
+                ry: 1,
+              },
+            ];
+            for (let a of candidates) {
+              if (a.rx !== undefined && Math.abs(a.y - n.y - n.h / 2) < limit)
+                a.y = n.y + n.h / 2;
+              if (a.ry !== undefined && Math.abs(a.x - n.x - n.w / 2) < limit)
+                a.x = n.x + n.w / 2;
+              let d = Math.hypot(a.x - p.x, a.y - p.y);
+              if (d <= limit && (!best || d < best.d))
+                best = {
+                  x: a.x,
+                  y: a.y,
+                  d,
+                  bind: {
+                    id: n.id,
+                    rx: (a.x - n.x) / n.w,
+                    ry: (a.y - n.y) / n.h,
+                  },
+                };
+            }
+          }
+          return best;
+        }
+        function setEndpoint(n, end, p, e) {
+          let start = end === "start",
+            key = start ? "startBind" : "endBind",
+            ax = start ? n.x2 : n.x,
+            ay = start ? n.y2 : n.y;
+          delete n[key];
+          let a = !e.metaKey && !e.ctrlKey ? anchorAt(p, n.id) : null;
+          if (a) {
+            n[key] = a.bind;
+            targetAnchor = a;
+            p = a;
+          } else {
+            let dx = p.x - ax,
+              dy = p.y - ay;
+            if (e.shiftKey) [dx, dy] = snap(dx, dy, true);
+            else if (!e.metaKey && !e.ctrlKey) {
+              if (Math.abs(dx) < 7 / view.z) dx = 0;
+              if (Math.abs(dy) < 7 / view.z) dy = 0;
+            }
+            p = { x: ax + dx, y: ay + dy };
+          }
+          if (start) {
+            n.x = p.x;
+            n.y = p.y;
+          } else {
+            n.x2 = p.x;
+            n.y2 = p.y;
+          }
+        }
+        function syncConnections() {
+          let byId = new Map(nodes.map((n) => [n.id, n]));
+          for (let n of nodes) {
+            if (n.type !== "arrow") continue;
+            for (let [key, x, y] of [
+              ["startBind", "x", "y"],
+              ["endBind", "x2", "y2"],
+            ]) {
+              let a = n[key],
+                b = a && byId.get(a.id);
+              if (!b || b.type !== "rect") {
+                delete n[key];
+                continue;
+              }
+              n[x] = b.x + b.w * a.rx;
+              n[y] = b.y + b.h * a.ry;
+            }
+          }
+        }
+
+        function pos(e) {
+          return {
+            x: (e.clientX - view.x) / view.z,
+            y: (e.clientY - view.y) / view.z,
+          };
+        }
+        function choose(t) {
+          finishEdit();
+          tool = t;
+          $$("[data-tool]").forEach((b) => {
+            b.classList.toggle("active", b.dataset.tool === t);
+            b.setAttribute("aria-pressed", b.dataset.tool === t);
+          });
+          $("#canvas").style.cursor =
+            t === "hand" ? "grab" : t === "select" ? "default" : "crosshair";
+          render();
+        }
+        // Rich text: allowlisted markup keeps pasted/stored content inert.
+        function cleanHTML(html) {
+          const src = document.createElement("template");
+          src.innerHTML = String(html);
+          const out = document.createElement("div");
+          function walk(from, to) {
+            for (const n of from.childNodes) {
+              if (n.nodeType === 3) {
+                to.append(document.createTextNode(n.textContent));
+                continue;
+              }
+              if (
+                n.nodeType !== 1 ||
+                ["SCRIPT", "STYLE", "IFRAME", "OBJECT", "SVG", "IMG"].includes(
+                  n.tagName,
+                )
+              )
+                continue;
+              const tag = {
+                B: "b",
+                STRONG: "b",
+                I: "i",
+                EM: "i",
+                U: "u",
+                S: "s",
+                STRIKE: "s",
+                BR: "br",
+                DIV: "div",
+                P: "div",
+                SPAN: "span",
+                MARK: "mark",
+              }[n.tagName];
+              let e = tag ? document.createElement(tag) : to;
+              if (tag) {
+                if (
+                  isHighlightColor(n.style.backgroundColor) ||
+                  tag === "mark"
+                ) {
+                  e.style.backgroundColor = tokenValue("--color-yellow-300");
+                  e.dataset.highlight = "true";
+                }
+                if (
+                  n.style.fontWeight === "bold" ||
+                  Number(n.style.fontWeight) >= 600
+                )
+                  e.style.fontWeight = "bold";
+                if (n.style.fontStyle === "italic")
+                  e.style.fontStyle = "italic";
+                if (n.style.textDecorationLine.includes("underline"))
+                  e.style.textDecoration = "underline";
+                to.append(e);
+              }
+              walk(n, e);
+            }
+          }
+          walk(src.content, out);
+          return out.innerHTML;
+        }
+        function selectEditor(all = false) {
+          const a = $("#editor"),
+            r = document.createRange();
+          r.selectNodeContents(a);
+          if (!all) r.collapse(false);
+          let sel = getSelection();
+          sel.removeAllRanges();
+          sel.addRange(r);
+        }
+        function growEditor() {
+          let a = $("#editor"),
+            n = nodes.find((n) => n.id === editing);
+          if (n) {
+            a.style.height = "auto";
+            a.style.height = Math.max(n.h, a.scrollHeight + 4) + "px";
+          }
+        }
+        function highlightActive() {
+          const sel = getSelection(),
+            a = $("#editor");
+          if (!sel.rangeCount) return false;
+          const r = sel.getRangeAt(0);
+          function painted(n) {
+            let e = n.nodeType === 1 ? n : n.parentElement;
+            while (e && e !== a) {
+              if (isHighlightColor(getComputedStyle(e).backgroundColor))
+                return true;
+              e = e.parentElement;
+            }
+            return false;
+          }
+          if (r.collapsed) return painted(sel.anchorNode);
+          let walker = document.createTreeWalker(a, NodeFilter.SHOW_TEXT),
+            parts = [],
+            n;
+          while ((n = walker.nextNode()))
+            if (n.textContent && r.intersectsNode(n)) parts.push(n);
+          return parts.length > 0 && parts.every(painted);
+        }
+        function updateFormat() {
+          if (!editing) return;
+          for (let b of $$("[data-format]")) {
+            let f = b.dataset.format;
+            let active =
+              f === "highlight"
+                ? highlightActive()
+                : f === "removeFormat"
+                  ? false
+                  : document.queryCommandState(f);
+            b.setAttribute("aria-pressed", String(active));
+          }
+        }
+        function applyFormat(f) {
+          if (!editing) return;
+          $("#editor").focus();
+          if (f === "highlight") {
+            let active = highlightActive();
+            document.execCommand(
+              "hiliteColor",
+              false,
+              active ? "transparent" : tokenValue("--color-yellow-300"),
+            );
+          } else document.execCommand(f, false, null);
+          growEditor();
+          updateFormat();
+        }
+        for (let b of $$("[data-format]")) {
+          b.onmousedown = (e) => e.preventDefault();
+          b.onclick = () => applyFormat(b.dataset.format);
+        }
+        document.addEventListener("selectionchange", updateFormat);
+        function edit(n, selectAll = false) {
+          if (n.type === "arrow") return;
+          selection = new Set([n.id]);
+          editing = n.id;
+          let a = $("#editor");
+          if (n.html) a.innerHTML = cleanHTML(n.html);
+          else a.textContent = n.text;
+          Object.assign(a.style, {
+            display: "block",
+            left: view.x + n.x * view.z + "px",
+            top: view.y + n.y * view.z + "px",
+            width: n.w + "px",
+            height: Math.max(n.h, 65) + "px",
+            transform: `scale(${view.z})`,
+            background: n.type === "rect" ? n.color : "var(--color-white)",
+            fontSize: "16px",
+            color: noteInk(n),
+          });
+          let bar = $("#formatbar");
+          Object.assign(bar.style, {
+            display: "flex",
+            left:
+              Math.max(8, Math.min(innerWidth - 180, view.x + n.x * view.z)) +
+              "px",
+            top: Math.max(8, view.y + n.y * view.z - 45) + "px",
+          });
+          a.focus();
+          selectEditor(selectAll);
+          growEditor();
+          render();
+          updateFormat();
+        }
+        function finishEdit() {
+          if (!editing) return;
+          let n = nodes.find((n) => n.id === editing),
+            a = $("#editor"),
+            html = cleanHTML(a.innerHTML),
+            text = a.innerText;
+          if (n && (n.text !== text || (n.html || "") !== html)) {
+            checkpoint();
+            n.text = text;
+            n.html = html;
+            n.h = Math.max(n.h, a.scrollHeight + 4);
+          }
+          editing = null;
+          a.style.display = "none";
+          $("#formatbar").style.display = "none";
+          a.blur();
+          render();
+          save();
+        }
+        $("#editor").addEventListener("input", () => {
+          growEditor();
+          updateFormat();
+        });
+        $("#editor").addEventListener("paste", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          document.execCommand(
+            "insertText",
+            false,
+            e.clipboardData.getData("text/plain"),
+          );
+        });
+        $("#editor").addEventListener("drop", (e) => e.preventDefault());
+        $("#editor").addEventListener("blur", finishEdit);
+        $("#editor").addEventListener("keydown", (e) => {
+          if (e.isComposing) return;
+          let mod = e.metaKey || e.ctrlKey,
+            k = e.key.toLowerCase();
+          let f =
+            mod &&
+            ({ b: "bold", i: "italic", u: "underline", "\\": "removeFormat" }[
+              k
+            ] ||
+              (e.shiftKey && k === "h" ? "highlight" : null));
+          if (f) {
+            e.preventDefault();
+            e.stopPropagation();
+            applyFormat(f);
+            return;
+          }
+          if (e.key === "Tab") {
+            e.preventDefault();
+            e.stopPropagation();
+            let list = nodes.filter((n) => n.type !== "arrow"),
+              i = list.findIndex((n) => n.id === editing);
+            finishEdit();
+            if (list.length)
+              edit(
+                list[(i + (e.shiftKey ? -1 : 1) + list.length) % list.length],
+                true,
+              );
+            return;
+          }
+          if (e.key === "Escape" || (e.key === "Enter" && mod)) {
+            e.preventDefault();
+            e.stopPropagation();
+            finishEdit();
+          }
+        });
+
+        $$("[data-tool]").forEach(
+          (b) => (b.onclick = () => choose(b.dataset.tool)),
+        );
+        $$("[data-color]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              finishEdit();
+              color = b.dataset.color;
+              $$("[data-color]").forEach((x) =>
+                x.classList.toggle("active", x === b),
+              );
+              if (chosen().some((n) => n.type === "rect")) {
+                checkpoint();
+                chosen().forEach((n) => {
+                  if (n.type === "rect") n.color = color;
+                });
+                render();
+                save();
+              }
+            }),
+        );
+        // Selection and board commands.
+        function groupIds(id) {
+          let n = nodes.find((n) => n.id === id);
+          return n?.group
+            ? nodes.filter((x) => x.group === n.group).map((x) => x.id)
+            : [id];
+        }
+        function offset(n, dx, dy) {
+          n.x += dx;
+          n.y += dy;
+          if (n.type === "arrow") {
+            n.x2 += dx;
+            n.y2 += dy;
+          }
+        }
+        function copies(ns, dx = 24, dy = 24) {
+          let groups = new Map(),
+            ids = new Map(ns.map((n) => [n.id, uid()]));
+          return ns.map((n) => {
+            let c = clone(n);
+            c.id = ids.get(n.id);
+            if (c.group) {
+              if (!groups.has(c.group)) groups.set(c.group, uid());
+              c.group = groups.get(c.group);
+            }
+            for (let key of ["startBind", "endBind"])
+              if (c[key]) {
+                if (ids.has(c[key].id)) c[key].id = ids.get(c[key].id);
+                else delete c[key];
+              }
+            offset(c, dx, dy);
+            return c;
+          });
+        }
+        function duplicate(beside = false) {
+          if (!selection.size) return;
+          checkpoint();
+          let dx = 24,
+            dy = 24;
+          if (beside) {
+            const gap = CONFIG.duplicateGap,
+              b = union(chosen());
+            let x = b.x + b.w + gap;
+            const obstacles = nodes
+              .map(bounds)
+              .filter((o) => b.y <= o.y + o.h && b.y + b.h >= o.y)
+              .sort((a, z) => a.x - z.x);
+            for (const o of obstacles)
+              if (x < o.x + o.w + gap && x + b.w + gap > o.x)
+                x = o.x + o.w + gap;
+            dx = x - b.x;
+            dy = 0;
+          }
+          let ns = copies(chosen(), dx, dy);
+          nodes.push(...ns);
+          selection = new Set(ns.map((n) => n.id));
+          render();
+          save();
+        }
+        function onBorderPointerDown(e) {
+          if (e.button !== 0 && e.button !== 1) return;
+          const id = e.target.dataset.grab;
+          if (!id) return;
+          e.preventDefault();
+          e.stopPropagation();
+          $("#canvas").setPointerCapture(e.pointerId);
+          finishEdit();
+          const p = pos(e);
+          if (space || tool === "hand" || e.button === 1) {
+            gesture = {
+              type: "pan",
+              sx: e.clientX,
+              sy: e.clientY,
+              v: { ...view },
+            };
+            document.body.classList.add("dragging");
+            return;
+          }
+          const ids = groupIds(id);
+          if (e.shiftKey) {
+            ids.forEach((x) => selection.add(x));
+          } else if (!selection.has(id)) selection = new Set(ids);
+          gesture = {
+            type: "move",
+            p,
+            originals: clone(chosen()),
+            before: state(),
+            alt: e.altKey,
+            shift: e.shiftKey,
+            border: true,
+          };
+          document.body.classList.add("dragging");
+          render();
+        }
+        function onCanvasPointerDown(e) {
+          if (e.button !== 0 && e.button !== 1) return;
+          e.preventDefault();
+          finishEdit();
+          let p = pos(e);
+          $("#canvas").setPointerCapture(e.pointerId);
+          if (space || tool === "hand" || e.button === 1) {
+            gesture = {
+              type: "pan",
+              sx: e.clientX,
+              sy: e.clientY,
+              v: { ...view },
+            };
+            return;
+          }
+          let id = e.target.closest("[data-id]")?.dataset.id,
+            handle = e.target.dataset.handle;
+          if (tool === "select") {
+            if (handle) {
+              gesture = {
+                type: e.target.dataset.end ? "endpoint" : "resize",
+                end: e.target.dataset.end,
+                side: e.target.dataset.side || "se",
+                p,
+                original: clone(nodes.find((n) => n.id === handle)),
+                before: state(),
+              };
+            } else if (id) {
+              let ids = groupIds(id);
+              if (e.shiftKey) {
+                if (selection.has(id)) {
+                  ids.forEach((x) => selection.delete(x));
+                  render();
+                  return;
+                }
+                ids.forEach((x) => selection.add(x));
+              } else if (!selection.has(id)) selection = new Set(ids);
+              gesture = {
+                type: "move",
+                p,
+                originals: clone(chosen()),
+                before: state(),
+                alt: e.altKey,
+                shift: e.shiftKey,
+              };
+            } else {
+              let base = e.shiftKey ? [...selection] : [];
+              selection = new Set(base);
+              gesture = { type: "marquee", p, base };
+            }
+            render();
+            return;
+          }
+          checkpoint();
+          let n = createNode(tool, p);
+          if (tool === "arrow") {
+            n.x2 = p.x;
+            n.y2 = p.y;
+            let a = anchorAt(p, n.id);
+            if (a) {
+              n.startBind = a.bind;
+              n.x = a.x;
+              n.y = a.y;
+            }
+          }
+          nodes.push(n);
+          selection = new Set([n.id]);
+          gesture = { type: "create", p };
+          render();
+        }
+        function beginChange(g) {
+          if (g.changed) return;
+          history.push(g.before);
+          if (history.length > CONFIG.historyLimit) history.shift();
+          future = [];
+          g.changed = true;
+        }
+        function snap(dx, dy, shift) {
+          if (!shift) return [dx, dy];
+          let a =
+              (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI) / 4,
+            r = Math.hypot(dx, dy);
+          return [Math.cos(a) * r, Math.sin(a) * r];
+        }
+        function onCanvasPointerMove(e) {
+          if (!gesture) return;
+          guides = [];
+          targetAnchor = null;
+          let g = gesture,
+            p = pos(e),
+            dx = p.x - g.p?.x,
+            dy = p.y - g.p?.y,
+            n = chosen()[0];
+          if (g.type === "pan") {
+            view.x = g.v.x + e.clientX - g.sx;
+            view.y = g.v.y + e.clientY - g.sy;
+          } else if (g.type === "marquee") {
+            g.box = {
+              x: Math.min(g.p.x, p.x),
+              y: Math.min(g.p.y, p.y),
+              w: Math.abs(dx),
+              h: Math.abs(dy),
+            };
+            let b = g.box;
+            selection = new Set(g.base);
+            for (let n of nodes) {
+              let a = bounds(n);
+              if (
+                a.x <= b.x + b.w &&
+                a.x + a.w >= b.x &&
+                a.y <= b.y + b.h &&
+                a.y + a.h >= b.y
+              )
+                groupIds(n.id).forEach((id) => selection.add(id));
+            }
+          } else if (g.type === "move") {
+            document.body.classList.add("dragging");
+            if (Math.hypot(dx, dy) * view.z < 3 && !g.changed) return;
+            beginChange(g);
+            if (g.alt && !g.duplicated) {
+              let ns = copies(g.originals, 0, 0);
+              nodes.push(...ns);
+              selection = new Set(ns.map((n) => n.id));
+              g.originals = clone(ns);
+              g.duplicated = true;
+            }
+            let lock = e.shiftKey
+              ? Math.abs(dx) > Math.abs(dy)
+                ? "y"
+                : "x"
+              : null;
+            if (lock === "y") dy = 0;
+            if (lock === "x") dx = 0;
+            if (!e.metaKey && !e.ctrlKey) {
+              let b = union(g.originals),
+                fix = snapBox(
+                  { ...b, x: b.x + dx, y: b.y + dy },
+                  new Set(g.originals.map((n) => n.id)),
+                );
+              if (lock !== "x") dx += fix.dx;
+              if (lock !== "y") dy += fix.dy;
+            }
+            for (let o of g.originals) {
+              let n = nodes.find((n) => n.id === o.id);
+              Object.assign(n, clone(o));
+              offset(n, dx, dy);
+              if (n.type === "arrow")
+                for (let key of ["startBind", "endBind"])
+                  if (n[key] && !selection.has(n[key].id)) delete n[key];
+            }
+          } else if (g.type === "resize") {
+            beginChange(g);
+            resizeNode(n, g, dx, dy, e);
+          } else if (g.type === "endpoint") {
+            beginChange(g);
+            setEndpoint(n, g.end, p, e);
+          } else if (g.type === "create") {
+            if (n.type === "arrow") {
+              setEndpoint(n, "end", p, e);
+            } else if (n.type === "rect" && Math.hypot(dx, dy) > 8) {
+              if (e.shiftKey) {
+                let side = Math.max(Math.abs(dx), Math.abs(dy));
+                dx = Math.sign(dx || 1) * side;
+                dy = Math.sign(dy || 1) * side;
+              }
+              n.x = g.p.x + Math.min(0, dx);
+              n.y = g.p.y + Math.min(0, dy);
+              n.w = Math.max(70, Math.abs(dx));
+              n.h = Math.max(50, Math.abs(dy));
+            }
+          }
+          render();
+        }
+        // Commit a completed pointer gesture as one undo step.
+        function release() {
+          document.body.classList.remove("dragging");
+          if (!gesture) return;
+          let g = gesture,
+            n = chosen()[0];
+          gesture = null;
+          guides = [];
+          targetAnchor = null;
+          if (
+            g.type === "move" &&
+            !g.border &&
+            !g.changed &&
+            !g.alt &&
+            !g.shift &&
+            selection.size === 1 &&
+            n?.type !== "arrow"
+          )
+            edit(n);
+          if (g.type === "create") {
+            if (n.type === "arrow" && Math.hypot(n.x2 - n.x, n.y2 - n.y) < 10) {
+              n.x2 = n.x + 160;
+              n.y2 = n.y;
+            }
+            choose("select");
+            if (n.type !== "arrow") edit(n);
+          }
+          render();
+          save();
+        }
+        $("#canvas").addEventListener("pointerup", release);
+        $("#canvas").addEventListener("pointercancel", release);
+        $("#canvas").addEventListener("dblclick", (e) => {
+          let n = nodes.find(
+            (n) => n.id === e.target.closest("[data-id]")?.dataset.id,
+          );
+          if (n) edit(n);
+          else if (tool === "select" && !space) {
+            let p = pos(e);
+            checkpoint();
+            let n = createNode("text", p);
+            nodes.push(n);
+            edit(n);
+          }
+        });
+        // Viewport and clipboard.
+        function zoom(z, cx = innerWidth / 2, cy = innerHeight / 2) {
+          finishEdit();
+          z = Math.max(CONFIG.minZoom, Math.min(CONFIG.maxZoom, z));
+          view.x = cx - ((cx - view.x) * z) / view.z;
+          view.y = cy - ((cy - view.y) * z) / view.z;
+          view.z = z;
+          render();
+          save();
+        }
+        function fit(ns = nodes) {
+          finishEdit();
+          if (!ns.length) view = { x: 0, y: 0, z: 1 };
+          else {
+            let b = union(ns),
+              z = Math.max(
+                0.1,
+                Math.min(
+                  2,
+                  (innerWidth - 130) / Math.max(b.w, 1),
+                  (innerHeight - 210) / Math.max(b.h, 1),
+                ),
+              );
+            view = {
+              x: (innerWidth - b.w * z) / 2 - b.x * z,
+              y: (innerHeight - b.h * z) / 2 - b.y * z - 25,
+              z,
+            };
+          }
+          render();
+          save();
+        }
+        $("#canvas").addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey)
+              zoom(view.z * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
+            else {
+              finishEdit();
+              view.x -= e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
+              view.y -= e.shiftKey && !e.deltaX ? 0 : e.deltaY;
+              render();
+              save();
+            }
+          },
+          { passive: false },
+        );
+        $("#plus").onclick = () => zoom(view.z * 1.2);
+        $("#minus").onclick = () => zoom(view.z / 1.2);
+        $("#home").onclick = () => fit();
+        function remove() {
+          if (!selection.size) return;
+          finishEdit();
+          checkpoint();
+          nodes = nodes.filter((n) => !selection.has(n.id));
+          selection.clear();
+          render();
+          save();
+        }
+        $("#delete").onclick = remove;
+        function reorder(front, extreme) {
+          if (!selection.size) return;
+          checkpoint();
+          if (extreme) {
+            let a = nodes.filter((n) => !selection.has(n.id)),
+              b = chosen();
+            nodes = front ? [...a, ...b] : [...b, ...a];
+          } else if (front) {
+            for (let i = nodes.length - 2; i >= 0; i--)
+              if (selection.has(nodes[i].id) && !selection.has(nodes[i + 1].id))
+                [nodes[i], nodes[i + 1]] = [nodes[i + 1], nodes[i]];
+          } else {
+            for (let i = 1; i < nodes.length; i++)
+              if (selection.has(nodes[i].id) && !selection.has(nodes[i - 1].id))
+                [nodes[i], nodes[i - 1]] = [nodes[i - 1], nodes[i]];
+          }
+          render();
+          save();
+        }
+        // Native clipboard events preserve normal text editing and allow cross-tab copy/paste.
+        for (let type of ["copy", "cut"])
+          addEventListener(type, (e) => {
+            if (typing() || !selection.size) return;
+            e.preventDefault();
+            e.clipboardData.setData(
+              "text/plain",
+              JSON.stringify({ kind: "memo-board", nodes: chosen() }),
+            );
+            if (type === "cut") remove();
+          });
+        addEventListener("paste", (e) => {
+          if (typing()) return;
+          let text = e.clipboardData.getData("text/plain");
+          if (!text) return;
+          e.preventDefault();
+          let ns;
+          try {
+            let d = JSON.parse(text);
+            if (d.kind === "memo-board" && valid(d.nodes)) ns = copies(d.nodes);
+          } catch {}
+          if (!ns) {
+            let p = {
+              x: (innerWidth / 2 - view.x) / view.z,
+              y: (innerHeight / 2 - view.y) / view.z,
+            };
+            ns = [createNode("text", p, text)];
+          }
+          checkpoint();
+          nodes.push(...ns);
+          selection = new Set(ns.map((n) => n.id));
+          render();
+          save();
+        });
+        function onBoardKeyDown(e) {
+          if (typing()) return;
+          if (
+            !e.metaKey &&
+            !e.ctrlKey &&
+            !e.altKey &&
+            selection.size === 1 &&
+            chosen()[0]?.type !== "arrow" &&
+            (e.key === "Process" ||
+              e.isComposing ||
+              (e.key.length === 1 && e.code !== "Space"))
+          ) {
+            edit(chosen()[0], true);
+            if (e.key !== "Process" && !e.isComposing) {
+              e.preventDefault();
+              document.execCommand("insertText", false, e.key);
+            }
+            return;
+          }
+          if (e.isComposing) return;
+          let mod = e.metaKey || e.ctrlKey,
+            k = e.key.toLowerCase(),
+            handled = true;
+          if (mod && k === "z") undo(e.shiftKey);
+          else if (mod && k === "y") undo(true);
+          else if (mod && k === "a") {
+            selection = new Set(nodes.map((n) => n.id));
+            render();
+          } else if (mod && k === "d") duplicate();
+          else if (mod && k === "s") save();
+          else if (mod && k === "g") {
+            if (selection.size) {
+              checkpoint();
+              let g = uid();
+              chosen().forEach((n) => {
+                if (e.shiftKey) delete n.group;
+                else n.group = g;
+              });
+              save();
+            }
+          } else if (
+            (mod || e.shiftKey) &&
+            (e.code === "BracketLeft" || e.code === "BracketRight")
+          )
+            reorder(e.code === "BracketRight", e.shiftKey);
+          else if ((mod || !e.altKey) && ["+", "=", "-", "0"].includes(k)) {
+            if (k === "0") zoom(1);
+            else zoom(view.z * (k === "-" ? 1 / 1.2 : 1.2));
+          } else if (e.shiftKey && e.code === "Digit1") fit();
+          else if (e.shiftKey && e.code === "Digit2") fit(chosen());
+          else if (e.code === "Space") {
+            space = true;
+            $("#canvas").style.cursor = "grab";
+          } else if (k === "delete" || k === "backspace") remove();
+          else if (k === "escape") {
+            document.body.classList.remove("dragging");
+            if (gesture?.before) {
+              let d = JSON.parse(gesture.before);
+              nodes = d.nodes;
+              if (gesture.changed) history.pop();
+            }
+            gesture = null;
+            guides = [];
+            targetAnchor = null;
+            selection.clear();
+            choose("select");
+            render();
+            save();
+          } else if ((k === "enter" || k === "f2") && selection.size === 1)
+            edit(chosen()[0]);
+          else if (k === "tab") {
+            let i = nodes.findIndex((n) => selection.has(n.id)),
+              j = (i + (e.shiftKey ? -1 : 1) + nodes.length) % nodes.length;
+            if (nodes[j]) selection = new Set(groupIds(nodes[j].id));
+            render();
+          } else if (
+            ["arrowleft", "arrowright", "arrowup", "arrowdown"].includes(k)
+          ) {
+            if (selection.size) {
+              if (!e.repeat) checkpoint();
+              let d = e.shiftKey ? 10 : 1,
+                dx = k === "arrowleft" ? -d : k === "arrowright" ? d : 0,
+                dy = k === "arrowup" ? -d : k === "arrowdown" ? d : 0;
+              chosen().forEach((n) => offset(n, dx, dy));
+              render();
+              save();
+            }
+          } else if (
+            !mod &&
+            !e.altKey &&
+            { v: 1, r: 1, a: 1, l: 1, t: 1, h: 1 }[k]
+          )
+            choose(
+              {
+                v: "select",
+                r: "rect",
+                a: "arrow",
+                l: "arrow",
+                t: "text",
+                h: "hand",
+              }[k],
+            );
+          else handled = false;
+          if (handled) e.preventDefault();
+        }
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            $("#canvas").style.cursor =
+              tool === "hand"
+                ? "grab"
+                : tool === "select"
+                  ? "default"
+                  : "crosshair";
+          }
+        });
+        addEventListener("blur", () => {
+          space = false;
+          release();
+        });
+        addEventListener("pagehide", () => {
+          finishEdit();
+          save();
+        });
+        $("#new").onclick = () => {
+          finishEdit();
+          checkpoint();
+          nodes = [];
+          selection.clear();
+          view = { x: 0, y: 0, z: 1 };
+          gesture = null;
+          guides = [];
+          targetAnchor = null;
+          choose("select");
+          render();
+          save();
+        };
+        // Startup. No network requests or external dependencies are required.
+        $("#grab-layer").addEventListener("pointerdown", onBorderPointerDown);
+        $("#canvas").addEventListener("pointerdown", onCanvasPointerDown);
+        $("#canvas").addEventListener("pointermove", onCanvasPointerMove);
+        addEventListener("keydown", onBoardKeyDown);
+        loadBoard();
+        render();
+      })();
+    </script>
+  </body>
+</html>
