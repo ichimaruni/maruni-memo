@@ -585,8 +585,8 @@
           viewBox="0 0 10 10"
           refX="10"
           refY="5"
-          markerWidth="14"
-          markerHeight="14"
+          markerWidth="22"
+          markerHeight="22"
           markerUnits="userSpaceOnUse"
           orient="auto-start-reverse"
         >
@@ -993,8 +993,8 @@
               const dx = n.x2 - n.x;
               const dy = n.y2 - n.y;
               const length = Math.hypot(dx, dy);
-              // Keep the rounded shaft end inside the 14px arrowhead.
-              const inset = length ? Math.min(7, length) / length : 0;
+              // Keep the rounded shaft end inside the 22px arrowhead.
+              const inset = length ? Math.min(11, length) / length : 0;
               el(
                 "line",
                 {
