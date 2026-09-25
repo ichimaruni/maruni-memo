@@ -458,6 +458,28 @@
         background: var(--surface);
         color: var(--ink);
       }
+      .duplicate-button {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 100ms ease;
+      }
+      .duplicate-button.is-hovered,
+      .duplicate-button:focus-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      /* Bridge the gap so the button remains reachable from the card border. */
+      .duplicate-button::after {
+        content: "";
+        position: absolute;
+        inset: 100% -4px -12px;
+      }
+      @media (hover: none) {
+        .duplicate-button {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
       .duplicate-button:hover {
         background: var(--active-bg);
         color: var(--active-ink);
@@ -1207,6 +1229,27 @@
               }
             }
         }
+        let hoveredComponent = null;
+        let hoverHideTimer;
+        function setHoveredComponent(id) {
+          hoveredComponent = id;
+          $$(".duplicate-button").forEach((button) => {
+            button.classList.toggle("is-hovered", button.dataset.duplicate === id);
+          });
+        }
+        function updateComponentHover(e) {
+          const target = e.target.closest("[data-id], [data-grab], [data-duplicate], #editor");
+          const id = target?.dataset.id || target?.dataset.grab ||
+            target?.dataset.duplicate || (target?.id === "editor" ? editing : null);
+          clearTimeout(hoverHideTimer);
+          if (id) setHoveredComponent(id);
+          else hoverHideTimer = setTimeout(() => setHoveredComponent(null), 200);
+        }
+        document.addEventListener("pointerover", updateComponentHover);
+        document.documentElement.addEventListener("pointerleave", () => {
+          clearTimeout(hoverHideTimer);
+          setHoveredComponent(null);
+        });
         function renderComponentActions() {
           const actions = $("#component-actions");
           actions.replaceChildren();
@@ -1214,6 +1257,7 @@
             const b = bounds(n),
               button = document.createElement("button");
             button.className = "duplicate-button";
+            button.classList.toggle("is-hovered", n.id === hoveredComponent);
             button.dataset.duplicate = n.id;
             button.title = "複製";
             button.setAttribute(
