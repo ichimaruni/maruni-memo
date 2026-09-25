@@ -990,6 +990,11 @@
           for (let n of nodes) {
             let g = el("g", { "data-id": n.id }, w);
             if (n.type === "arrow") {
+              const dx = n.x2 - n.x;
+              const dy = n.y2 - n.y;
+              const length = Math.hypot(dx, dy);
+              // Keep the rounded shaft end inside the 14px arrowhead.
+              const inset = length ? Math.min(7, length) / length : 0;
               el(
                 "line",
                 {
@@ -999,6 +1004,7 @@
                   y2: n.y2,
                   stroke: "transparent",
                   "stroke-width": 18,
+                  "marker-end": "url(#arrowhead)",
                 },
                 g,
               );
@@ -1007,12 +1013,11 @@
                 {
                   x1: n.x,
                   y1: n.y,
-                  x2: n.x2,
-                  y2: n.y2,
+                  x2: n.x2 - dx * inset,
+                  y2: n.y2 - dy * inset,
                   stroke: "var(--color-black)",
                   "stroke-width": 4,
                   "stroke-linecap": "round",
-                  "marker-end": "url(#arrowhead)",
                 },
                 g,
               );
