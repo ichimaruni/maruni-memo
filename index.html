@@ -220,7 +220,7 @@
         justify-content: center;
         background: var(--color-white);
         border: 1.5px solid var(--ink);
-        border-radius: 8px;
+        border-radius: 4px;
         pointer-events: auto;
         cursor: move;
         user-select: none;
@@ -256,25 +256,35 @@
           0 0 0 4px var(--color-gray-200),
           0 0 0 5px var(--accent);
       }
-      .box .resize,
+      .box .rs,
       .box .conn {
         position: absolute;
+        z-index: 1;
         display: none;
       }
-      .box.selected:not(.editing) .resize,
-      .box.selected:not(.editing) .conn {
+      .box.solo:not(.editing) .rs,
+      .box.solo:not(.editing) .conn {
         display: block;
       }
-      .box .resize {
-        right: -7px;
-        bottom: -7px;
-        width: 12px;
-        height: 12px;
-        border: 2px solid var(--accent);
-        border-radius: 3px;
+      .rs.nw,
+      .rs.ne,
+      .rs.se,
+      .rs.sw {
+        z-index: 2;
+        width: 10px;
+        height: 10px;
+        border: 1.5px solid var(--accent);
+        border-radius: 2px;
         background: var(--color-white);
-        cursor: nwse-resize;
       }
+      .rs.nw { left: -6px; top: -6px; cursor: nwse-resize; }
+      .rs.se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+      .rs.ne { right: -6px; top: -6px; cursor: nesw-resize; }
+      .rs.sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+      .rs.n { top: -5px; left: 8px; right: 8px; height: 10px; cursor: ns-resize; }
+      .rs.s { bottom: -5px; left: 8px; right: 8px; height: 10px; cursor: ns-resize; }
+      .rs.e { right: -5px; top: 8px; bottom: 8px; width: 10px; cursor: ew-resize; }
+      .rs.w { left: -5px; top: 8px; bottom: 8px; width: 10px; cursor: ew-resize; }
       .box .conn {
         width: 14px;
         height: 14px;
@@ -299,6 +309,19 @@
       .conn.w {
         left: -22px;
         top: calc(50% - 7px);
+      }
+      #arrows .guide {
+        stroke: var(--red);
+        stroke-width: 1;
+        stroke-dasharray: 4 3;
+      }
+      #marquee {
+        position: absolute;
+        z-index: 6;
+        display: none;
+        border: 1px solid var(--color-gray-500);
+        background: rgba(0, 0, 0, 0.04);
+        pointer-events: none;
       }
       #drawpad {
         position: absolute;
@@ -509,6 +532,7 @@
       <svg id="arrows" aria-hidden="true"></svg>
       <div id="shapes"></div>
       <div id="drawpad" aria-hidden="true"></div>
+      <div id="marquee" aria-hidden="true"></div>
     </main>
 
     <nav class="toolbar" aria-label="ツール">
@@ -567,7 +591,7 @@
       <dl>
         <dt><kbd>-</kbd> <kbd>・</kbd> <kbd>1.</kbd> ＋スペース</dt>
         <dd>行頭で箇条書き・番号付きにする</dd>
-        <dt><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dt>
+        <dt><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd>（<kbd class="mod">⌘</kbd>+<kbd>]</kbd> / <kbd>[</kbd>）</dt>
         <dd>インデントする / 戻す</dd>
         <dt>空の項目で <kbd>Enter</kbd></dt>
         <dd>一段戻す（いちばん外側なら箇条書きをやめる）</dd>
@@ -599,6 +623,10 @@
         <dd>四角に文字を入れる</dd>
         <dt><kbd>Delete</kbd> / <kbd>Esc</kbd></dt>
         <dd>選んだ図形を消す / 選択・描画をやめる</dd>
+        <dt>空いている所からドラッグ / <kbd class="mod">⌘</kbd>+<kbd>A</kbd></dt>
+        <dd>範囲の図形をまとめて選ぶ / 図形をすべて選ぶ（文字を書いている時は <kbd>Esc</kbd> のあと）。<kbd>Shift</kbd>+クリックで追加・解除</dd>
+        <dt>ドラッグで移動・辺や角で大きさ変更</dt>
+        <dd>ほかの四角の端・中心にそろい、赤い線が出る。<kbd class="mod">⌘</kbd> を押しながらで吸着なし、<kbd>Shift</kbd> で縦横だけに動かす</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>D</kbd> / <kbd class="mod">⌥</kbd>+ドラッグ</dt>
         <dd>選んだ図形を複製する（文中では今の行を複製）</dd>
       </dl>
@@ -634,6 +662,7 @@
           layer = $("#shapes"),
           svg = $("#arrows"),
           pad = $("#drawpad"),
+          mq = $("#marquee"),
           toolbar = $(".toolbar"),
           help = $("#help");
         const isMac = /Mac|iPhone|iPad/.test(
@@ -649,7 +678,8 @@
             !!n && n.nodeType === 1 && (n.tagName === "UL" || n.tagName === "OL");
 
         let shapes = [],
-          selected = null,
+          picked = new Set(),
+          guides = [],
           editingBox = null,
           hoverTarget = null,
           tool = null,
@@ -1276,6 +1306,7 @@
           document.execCommand(cmd, false, value);
         }
         function toggleHighlight() {
+          if (document.activeElement !== doc && picked.size) return;
           focusDoc();
           const on = isYellow(document.queryCommandValue("backColor"));
           record();
@@ -1283,6 +1314,7 @@
           changed();
         }
         function toggleRed() {
+          if (document.activeElement !== doc && picked.size) return;
           focusDoc();
           const on = isRed(document.queryCommandValue("foreColor"));
           record();
@@ -1321,7 +1353,7 @@
           const s = from.pop();
           doc.innerHTML = s.html;
           shapes = s.shapes;
-          selected = null;
+          picked.clear();
           renderShapes();
           restoreCaretPath(s.caret);
           lastKind = "";
@@ -1459,7 +1491,8 @@
           return e;
         }
         function renderShapes() {
-          const live = new Set();
+          const live = new Set(),
+            one = picked.size === 1;
           for (const s of shapes) {
             if (s.type !== "box") continue;
             live.add(s.id);
@@ -1469,7 +1502,8 @@
               el.className = "box";
               el.dataset.id = s.id;
               el.innerHTML =
-                '<div class="label"></div><span class="resize"></span>' +
+                '<div class="label"></div>' +
+                ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((d) => `<span class="rs ${d}" data-d="${d}"></span>`).join("") +
                 ["n", "e", "s", "w"].map((d) => `<span class="conn ${d}"></span>`).join("");
               boxEls.set(s.id, el);
             }
@@ -1481,7 +1515,8 @@
               height: s.h + "px",
               background: s.color || "",
             });
-            el.classList.toggle("selected", selected === s.id);
+            el.classList.toggle("selected", picked.has(s.id));
+            el.classList.toggle("solo", one && picked.has(s.id));
             el.classList.toggle("editing", editingBox === s.id);
             el.classList.toggle("target", hoverTarget === s.id);
             const label = el.firstChild;
@@ -1506,15 +1541,16 @@
               W = 6.5,
               bx = pb.x - ux * H,
               by = pb.y - uy * H;
-            const g = svgEl("g", { class: "arrow" + (selected === a.id ? " sel" : ""), "data-id": a.id }, svg);
+            const g = svgEl("g", { class: "arrow" + (picked.has(a.id) ? " sel" : ""), "data-id": a.id }, svg);
             svgEl("line", { class: "hit", x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y }, g);
             svgEl("line", { class: "shaft", x1: pa.x, y1: pa.y, x2: bx + ux, y2: by + uy }, g);
             svgEl("path", { class: "head", d: `M${pb.x},${pb.y}L${bx - uy * W},${by + ux * W}L${bx + uy * W},${by - ux * W}Z` }, g);
-            if (selected === a.id) {
+            if (one && picked.has(a.id)) {
               svgEl("circle", { class: "handle", "data-end": "a", cx: pa.x, cy: pa.y, r: 6 }, g);
               svgEl("circle", { class: "handle", "data-end": "b", cx: pb.x, cy: pb.y, r: 6 }, g);
             }
           }
+          for (const l of guides) svgEl("line", { class: "guide", ...l }, svg);
           layoutPage();
         }
         function layoutPage() {
@@ -1534,54 +1570,159 @@
           svg.setAttribute("width", page.scrollWidth);
           svg.setAttribute("height", page.scrollHeight);
         }
-        function selectShape(id) {
-          if (document.activeElement === doc) doc.blur();
-          selected = id;
-          renderShapes();
-          updateToolbar();
+
+        // Selection of shapes: one or many ids in `picked`.
+        const solo = () => (picked.size === 1 ? byId([...picked][0]) : null);
+        function pick(ids) {
+          picked = new Set(ids);
         }
         function deselect() {
           finishBoxEdit();
-          if (!selected) return;
-          selected = null;
+          if (!picked.size) return;
+          picked.clear();
           renderShapes();
         }
-        function removeShape(id) {
+        function removePicked() {
+          if (!picked.size) return;
           record();
-          shapes = shapes.filter((s) => s.id !== id);
+          shapes = shapes.filter((s) => !picked.has(s.id));
           for (const a of shapes) {
-            if (a.a?.id === id) delete a.a;
-            if (a.b?.id === id) delete a.b;
+            if (a.a && picked.has(a.a.id)) delete a.a;
+            if (a.b && picked.has(a.b.id)) delete a.b;
           }
-          selected = null;
+          picked.clear();
           renderShapes();
           scheduleSave();
         }
-        // Copies drop their bindings so a duplicate can be placed freely.
-        function copyShape(id, dx, dy) {
-          const s = byId(id);
-          if (!s) return null;
-          const c = clone(s);
-          c.id = uid();
-          if (c.type === "box") {
-            c.x += dx;
-            c.y += dy;
-          } else {
-            delete c.a;
-            delete c.b;
-            c.x1 += dx; c.x2 += dx; c.y1 += dy; c.y2 += dy;
+        // Copies keep arrows attached to copied boxes and detach the rest.
+        function copyGroup(ids, dx, dy) {
+          const map = new Map(ids.map((i) => [i, uid()])),
+            out = [];
+          for (const id of ids) {
+            const s = byId(id);
+            if (!s) continue;
+            const c = clone(s);
+            c.id = map.get(id);
+            if (c.type === "box") {
+              c.x += dx;
+              c.y += dy;
+            } else {
+              for (const end of ["a", "b"])
+                if (c[end] && map.has(c[end].id)) c[end] = { ...c[end], id: map.get(c[end].id) };
+                else delete c[end];
+              c.x1 += dx; c.x2 += dx; c.y1 += dy; c.y2 += dy;
+            }
+            shapes.push(c);
+            out.push(c.id);
           }
-          shapes.push(c);
-          return c;
+          return out;
         }
-        function duplicateShape(id) {
+        function duplicatePicked() {
+          if (!picked.size) return;
           record();
-          const c = copyShape(id, 24, 24);
-          if (!c) return;
-          selected = c.id;
+          pick(copyGroup([...picked], 24, 24));
           renderShapes();
           scheduleSave();
         }
+        function moveGroup(orig, dx, dy) {
+          for (const [id, o] of orig) {
+            const s = byId(id);
+            if (!s) continue;
+            if (s.type === "box") {
+              s.x = Math.round(o.x + dx);
+              s.y = Math.round(o.y + dy);
+              continue;
+            }
+            for (const [end, kx, ky] of [["a", "x1", "y1"], ["b", "x2", "y2"]]) {
+              if (o[end] && orig.has(o[end].id)) continue;
+              delete s[end];
+              s[kx] = o[kx] + dx;
+              s[ky] = o[ky] + dy;
+            }
+          }
+        }
+
+        // Snapping: edges and centers of other boxes first, then an 8px grid.
+        const SNAP = 8,
+          GRID = 8;
+        const others = () => shapes.filter((s) => s.type === "box" && !picked.has(s.id));
+        const xsOf = (o) => [o.x, o.x + o.w / 2, o.x + o.w],
+          ysOf = (o) => [o.y, o.y + o.h / 2, o.y + o.h];
+        function union(list) {
+          const x = Math.min(...list.map((s) => s.x)),
+            y = Math.min(...list.map((s) => s.y));
+          return {
+            x,
+            y,
+            w: Math.max(...list.map((s) => s.x + s.w)) - x,
+            h: Math.max(...list.map((s) => s.y + s.h)) - y,
+          };
+        }
+        function nearest(values, targets) {
+          let best = null;
+          for (const a of values)
+            for (const v of targets) {
+              const d = v - a;
+              if (Math.abs(d) <= SNAP && (best === null || Math.abs(d) < Math.abs(best))) best = d;
+            }
+          return best;
+        }
+        function addGuides(r, os, axis) {
+          const of = axis === "x" ? xsOf : ysOf;
+          for (const v of of(r)) {
+            const hits = os.filter((o) => of(o).some((w) => Math.abs(w - v) < 0.5));
+            if (!hits.length) continue;
+            const all = [r, ...hits];
+            if (axis === "x")
+              guides.push({ x1: v, x2: v, y1: Math.min(...all.map((o) => o.y)) - 8, y2: Math.max(...all.map((o) => o.y + o.h)) + 8 });
+            else
+              guides.push({ y1: v, y2: v, x1: Math.min(...all.map((o) => o.x)) - 8, x2: Math.max(...all.map((o) => o.x + o.w)) + 8 });
+          }
+        }
+        function snapRect(r, axes) {
+          const os = others(),
+            bx = nearest(xsOf(r), os.flatMap(xsOf)),
+            by = nearest(ysOf(r), os.flatMap(ysOf)),
+            dx = axes.includes("x") ? (bx ?? Math.round(r.x / GRID) * GRID - r.x) : 0,
+            dy = axes.includes("y") ? (by ?? Math.round(r.y / GRID) * GRID - r.y) : 0,
+            moved = { x: r.x + dx, y: r.y + dy, w: r.w, h: r.h };
+          if (bx !== null && axes.includes("x")) addGuides(moved, os, "x");
+          if (by !== null && axes.includes("y")) addGuides(moved, os, "y");
+          return { dx, dy };
+        }
+        function resizeBox(s, o, dir, dx, dy, free) {
+          let L = o.x,
+            T = o.y,
+            R = o.x + o.w,
+            B = o.y + o.h;
+          if (dir.includes("e")) R += dx;
+          if (dir.includes("w")) L += dx;
+          if (dir.includes("s")) B += dy;
+          if (dir.includes("n")) T += dy;
+          const os = others();
+          if (!free) {
+            // An edge snaps to another box's edge, else the size matches another box, else the grid.
+            const fit = (edge, fixed, sign, axis) => {
+              const d = nearest([edge], os.flatMap(axis === "x" ? xsOf : ysOf));
+              if (d !== null) return edge + d;
+              const len = Math.abs(edge - fixed),
+                same = os.map((b) => (axis === "x" ? b.w : b.h)).find((t) => Math.abs(t - len) <= SNAP);
+              return fixed + sign * (same ?? Math.round(len / GRID) * GRID);
+            };
+            if (dir.includes("e")) R = fit(R, L, 1, "x");
+            if (dir.includes("w")) L = fit(L, R, -1, "x");
+            if (dir.includes("s")) B = fit(B, T, 1, "y");
+            if (dir.includes("n")) T = fit(T, B, -1, "y");
+          }
+          if (R - L < 40) dir.includes("w") ? (L = R - 40) : (R = L + 40);
+          if (B - T < 28) dir.includes("n") ? (T = B - 28) : (B = T + 28);
+          Object.assign(s, { x: Math.round(L), y: Math.round(T), w: Math.round(R - L), h: Math.round(B - T) });
+          if (!free) {
+            addGuides(s, os, "x");
+            addGuides(s, os, "y");
+          }
+        }
+
         function duplicateLine() {
           const r = sel();
           if (!r) return;
@@ -1598,7 +1739,7 @@
           const el = boxEls.get(id),
             s = byId(id);
           if (!el || !s) return;
-          selected = id;
+          pick([id]);
           editingBox = id;
           renderShapes();
           const label = el.firstChild;
@@ -1685,10 +1826,60 @@
           updateToolbar();
         }
 
-        // Pointer interaction for drawing, moving and resizing.
+        // Pointer interaction for drawing, moving, resizing and range selection.
         function pointOf(e) {
           const r = page.getBoundingClientRect();
           return { x: e.clientX - r.left, y: e.clientY - r.top };
+        }
+        // Blank paper (not over a line of text) starts a range selection with the mouse.
+        function overText(e) {
+          const t = e.target;
+          if (!doc.contains(t) || t === doc) return false;
+          const blk = closestLi(t) || topBlock(t);
+          if (!blk) return false;
+          let r;
+          if (blk.tagName === "LI") r = inlineRange(blk);
+          else {
+            r = document.createRange();
+            r.selectNodeContents(blk);
+          }
+          return [...r.getClientRects()].some(
+            (rc) => e.clientY >= rc.top - 2 && e.clientY <= rc.bottom + 2 && e.clientX >= rc.left - 32 && e.clientX <= rc.right + 24,
+          );
+        }
+        function placeCaret(x, y) {
+          let r = document.caretRangeFromPoint?.(x, y);
+          if (!r && document.caretPositionFromPoint) {
+            const p = document.caretPositionFromPoint(x, y);
+            if (p) {
+              r = document.createRange();
+              r.setStart(p.offsetNode, p.offset);
+            }
+          }
+          if (!r || !doc.contains(r.startContainer)) return caretAt(doc.lastElementChild, true);
+          if (r.startContainer === doc)
+            return caretAt(doc.children[Math.min(r.startOffset, doc.children.length - 1)], true);
+          r.collapse(true);
+          doc.focus({ preventScroll: true });
+          const s = getSelection();
+          s.removeAllRanges();
+          s.addRange(r);
+        }
+        function marquee(d, p) {
+          const x = Math.min(d.start.x, p.x),
+            y = Math.min(d.start.y, p.y),
+            w = Math.abs(p.x - d.start.x),
+            h = Math.abs(p.y - d.start.y);
+          Object.assign(mq.style, { display: "block", left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
+          picked = new Set(d.base);
+          for (const s of shapes) {
+            const b =
+              s.type === "box"
+                ? s
+                : { x: Math.min(s.x1, s.x2), y: Math.min(s.y1, s.y2), w: Math.abs(s.x2 - s.x1), h: Math.abs(s.y2 - s.y1) };
+            if (b.x <= x + w && b.x + b.w >= x && b.y <= y + h && b.y + b.h >= y) picked.add(s.id);
+          }
+          renderShapes();
         }
         page.addEventListener("pointerdown", (e) => {
           if (e.button !== 0) return;
@@ -1700,77 +1891,90 @@
             page.setPointerCapture(e.pointerId);
             return;
           }
-          const boxEl = t.closest?.(".box"),
-            arrowEl = t.closest?.("g.arrow");
-          if (boxEl) {
-            const id = boxEl.dataset.id;
+          const shapeEl = t.closest?.(".box, g.arrow");
+          if (shapeEl) {
+            const id = shapeEl.dataset.id;
             if (editingBox === id && t.closest(".label")) return;
             e.preventDefault();
             finishBoxEdit();
-            selectShape(id);
-            if (t.classList.contains("resize")) drag = { mode: "resize", id, start: p, orig: clone(byId(id)) };
+            if (document.activeElement === doc) doc.blur();
+            if (t.dataset.d) drag = { mode: "resize", id, dir: t.dataset.d, start: p, orig: clone(byId(id)) };
             else if (t.classList.contains("conn")) drag = { mode: "connect", from: id, start: p };
-            else if (e.altKey) {
-              record();
-              const c = copyShape(id, 0, 0);
-              selected = c.id;
-              drag = { mode: "move", id: c.id, start: p, orig: clone(c), copied: true, source: id, recorded: true };
+            else if (t.classList.contains("handle")) drag = { mode: "end", id, end: t.dataset.end, start: p };
+            else if (e.shiftKey) {
+              if (picked.has(id)) picked.delete(id);
+              else picked.add(id);
               renderShapes();
-            } else drag = { mode: "move", id, start: p, orig: clone(byId(id)) };
+              updateToolbar();
+              return;
+            } else {
+              const wasPicked = picked.has(id);
+              if (!wasPicked) pick([id]);
+              let ids = [...picked],
+                source = null;
+              if (e.altKey) {
+                record();
+                source = ids;
+                ids = copyGroup(ids, 0, 0);
+                pick(ids);
+              }
+              drag = {
+                mode: "move",
+                start: p,
+                orig: new Map(ids.map((i) => [i, clone(byId(i))])),
+                source,
+                recorded: !!source,
+                clickId: wasPicked && picked.size > 1 ? id : null,
+              };
+            }
+            if (drag.mode !== "move") pick([id]);
+            renderShapes();
+            updateToolbar();
             page.setPointerCapture(e.pointerId);
             return;
           }
-          if (arrowEl) {
+          finishBoxEdit();
+          if (toggleFold(e)) return;
+          lastKind = "";
+          if (e.pointerType === "mouse" && !overText(e)) {
             e.preventDefault();
-            finishBoxEdit();
-            const id = arrowEl.dataset.id;
-            selectShape(id);
-            if (t.classList.contains("handle")) drag = { mode: "end", id, end: t.dataset.end, start: p };
-            else if (e.altKey) {
-              record();
-              const c = copyShape(id, 0, 0);
-              selected = c.id;
-              drag = { mode: "moveArrow", id: c.id, start: p, orig: clone(c), copied: true, source: id, recorded: true };
-              renderShapes();
-            } else drag = { mode: "moveArrow", id, start: p, orig: clone(byId(id)) };
+            drag = { mode: "marquee", start: p, base: e.shiftKey ? new Set(picked) : new Set(), cx: e.clientX, cy: e.clientY };
             page.setPointerCapture(e.pointerId);
             return;
           }
           deselect();
-          lastKind = "";
-          toggleFold(e);
         });
         page.addEventListener("pointermove", (e) => {
           if (!drag) return;
-          const p = pointOf(e),
-            dx = p.x - drag.start.x,
+          const p = pointOf(e);
+          let dx = p.x - drag.start.x,
             dy = p.y - drag.start.y;
           if (!drag.moved) {
             if (Math.hypot(dx, dy) < 4) return;
             drag.moved = true;
-            if (!drag.recorded) record();
+            if (drag.mode === "marquee") {
+              if (document.activeElement === doc) doc.blur();
+            } else if (!drag.recorded) record();
           }
+          if (drag.mode === "marquee") return marquee(drag, p);
+          const free = e.metaKey || e.ctrlKey;
+          guides = [];
           if (drag.mode === "move") {
-            const s = byId(drag.id);
-            let x = Math.round(drag.orig.x + dx),
-              y = Math.round(drag.orig.y + dy);
-            for (const o of shapes) {
-              if (o.type !== "box" || o.id === s.id) continue;
-              if (Math.abs(x + s.w / 2 - (o.x + o.w / 2)) < 6) x = Math.round(o.x + o.w / 2 - s.w / 2);
-              if (Math.abs(y + s.h / 2 - (o.y + o.h / 2)) < 6) y = Math.round(o.y + o.h / 2 - s.h / 2);
+            let axes = "xy";
+            if (e.shiftKey) {
+              if (Math.abs(dx) > Math.abs(dy)) (dy = 0), (axes = "x");
+              else (dx = 0), (axes = "y");
             }
-            [s.x, s.y] = [x, y];
-          } else if (drag.mode === "resize") {
-            const s = byId(drag.id);
-            s.w = Math.max(48, Math.round(drag.orig.w + dx));
-            s.h = Math.max(32, Math.round(drag.orig.h + dy));
-          } else if (drag.mode === "moveArrow") {
-            const a = byId(drag.id),
-              o = drag.orig;
-            delete a.a;
-            delete a.b;
-            [a.x1, a.y1, a.x2, a.y2] = [o.x1 + dx, o.y1 + dy, o.x2 + dx, o.y2 + dy];
-          } else if (drag.mode === "end") setEnd(byId(drag.id), drag.end, p);
+            const boxes = [...drag.orig.values()].filter((s) => s.type === "box");
+            if (boxes.length && !free) {
+              const b = union(boxes),
+                s = snapRect({ x: b.x + dx, y: b.y + dy, w: b.w, h: b.h }, axes);
+              dx += s.dx;
+              dy += s.dy;
+            }
+            moveGroup(drag.orig, dx, dy);
+          } else if (drag.mode === "resize") resizeBox(byId(drag.id), drag.orig, drag.dir, dx, dy, free);
+          else if (drag.mode === "end") setEnd(byId(drag.id), drag.end, p);
           else if (drag.mode === "newBox") {
             if (!drag.id) {
               const s = { id: uid(), type: "box", x: 0, y: 0, w: 1, h: 1, text: "" };
@@ -1789,7 +1993,7 @@
               if (from) a.a = { id: from.id };
               shapes.push(a);
               drag.id = a.id;
-              selected = a.id;
+              pick([a.id]);
             }
             setEnd(byId(drag.id), "b", p);
           }
@@ -1799,11 +2003,23 @@
           const d = drag;
           drag = null;
           hoverTarget = null;
+          guides = [];
           if (!d) return;
-          if (d.copied && !d.moved) {
-            shapes = shapes.filter((s) => s.id !== d.id);
-            undoStack.pop();
-            selected = d.source;
+          if (d.mode === "marquee") {
+            mq.style.display = "none";
+            if (!d.moved) {
+              deselect();
+              placeCaret(d.cx, d.cy);
+            }
+            updateToolbar();
+            return;
+          }
+          if (d.mode === "move" && !d.moved) {
+            if (d.source) {
+              shapes = shapes.filter((s) => !d.orig.has(s.id));
+              undoStack.pop();
+              pick(d.source);
+            } else if (d.clickId) pick([d.clickId]);
           }
           if (d.mode === "newBox") {
             let s = d.id && byId(d.id);
@@ -1828,7 +2044,7 @@
               if (Math.hypot(pb.x - pa.x, pb.y - pa.y) < 12) {
                 shapes = shapes.filter((s) => s !== a);
                 undoStack.pop();
-                selected = null;
+                picked.clear();
               }
             }
           }
@@ -1839,14 +2055,15 @@
         page.addEventListener("pointercancel", endDrag);
         function toggleFold(e) {
           const li = e.target;
-          if (li.tagName !== "LI" || !doc.contains(li) || !subList(li)) return;
+          if (li.tagName !== "LI" || !doc.contains(li) || !subList(li)) return false;
           const r = li.getBoundingClientRect(),
             lh = parseFloat(getComputedStyle(li).lineHeight) || 28;
-          if (e.clientX > r.left + 24 || e.clientY > r.top + lh) return;
+          if (e.clientX > r.left + 24 || e.clientY > r.top + lh) return false;
           e.preventDefault();
           record();
           li.classList.toggle("collapsed");
           changed();
+          return true;
         }
 
         // Document events.
@@ -1883,20 +2100,15 @@
           if (mod && !e.altKey && k === "z") undo(e.shiftKey);
           else if (mod && k === "y") undo(true);
           else if (e.key === "Tab" && !mod) e.shiftKey ? outdent() : indent();
-          else if (mod && e.shiftKey && e.code === "Digit8") toggleList("UL");
-          else if (mod && e.shiftKey && e.code === "Digit7") toggleList("OL");
-          else if (mod && e.shiftKey && e.code === "KeyH") toggleHighlight();
-          else if (mod && e.shiftKey && e.code === "KeyE") toggleRed();
-          else if (mod && !e.shiftKey && k === "d") duplicateLine();
-          else if (e.altKey && !mod && e.code === "KeyR") setTool(tool === "box" ? null : "box");
-          else if (e.altKey && !mod && e.code === "KeyA") setTool(tool === "arrow" ? null : "arrow");
           else if (e.altKey && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown"))
             moveItem(e.key === "ArrowUp" ? -1 : 1);
           else if (e.key === "Enter" && !e.shiftKey && !mod && !e.altKey) done = enterInItem();
           else if (e.key === "Backspace" && !mod && !e.altKey) done = backspaceInItem();
           else if (e.key === "Escape") {
-            setTool(null);
-            showHelp(false);
+            if (tool || !help.hidden) {
+              setTool(null);
+              showHelp(false);
+            } else doc.blur();
           } else done = false;
           if (done) e.preventDefault();
         });
@@ -1986,42 +2198,39 @@
           if (e.target.closest?.(".toolbar, .help") && (e.key === "Enter" || e.key === " ")) return;
           const mod = e.metaKey || e.ctrlKey,
             k = e.key.toLowerCase(),
-            s = selected && byId(selected);
+            s = solo();
           if (mod && !e.altKey && k === "z") {
             e.preventDefault();
             undo(e.shiftKey);
-          } else if (mod && k === "y") {
+          } else if (mod && !e.shiftKey && k === "a") {
             e.preventDefault();
-            undo(true);
+            pick(shapes.map((x) => x.id));
+            renderShapes();
           } else if (e.key === "Escape") {
             setTool(null);
             showHelp(false);
             deselect();
-          } else if (s && mod && k === "d") {
+          } else if (picked.size && (e.key === "Delete" || e.key === "Backspace")) {
             e.preventDefault();
-            duplicateShape(s.id);
-          } else if (s && (e.key === "Delete" || e.key === "Backspace")) {
-            e.preventDefault();
-            removeShape(s.id);
+            removePicked();
           } else if (s && s.type === "box" && e.key === "Enter") {
             e.preventDefault();
             editBox(s.id);
-          } else if (s && s.type === "box" && e.key.startsWith("Arrow") && !mod) {
+          } else if (picked.size && e.key.startsWith("Arrow") && !mod) {
             e.preventDefault();
             if (!e.repeat) record();
             const d = e.shiftKey ? 10 : 1;
-            s.x += k === "arrowleft" ? -d : k === "arrowright" ? d : 0;
-            s.y += k === "arrowup" ? -d : k === "arrowdown" ? d : 0;
+            moveGroup(
+              new Map([...picked].map((i) => [i, clone(byId(i))])),
+              k === "arrowleft" ? -d : k === "arrowright" ? d : 0,
+              k === "arrowup" ? -d : k === "arrowdown" ? d : 0,
+            );
             renderShapes();
             scheduleSave();
-          } else if (e.altKey && !mod && (e.code === "KeyR" || e.code === "KeyA")) {
-            e.preventDefault();
-            const t = e.code === "KeyR" ? "box" : "arrow";
-            setTool(tool === t ? null : t);
           } else if (s && s.type === "box" && !mod && !e.altKey && (e.key === "Process" || e.key.length === 1)) {
             if (e.key !== "Process") e.preventDefault();
             editBox(s.id, e.key === "Process" ? undefined : e.key);
-          } else if (!s && !tool && !mod && !e.altKey && e.key.length === 1) focusDoc();
+          } else if (!picked.size && !tool && !mod && !e.altKey && e.key.length === 1) focusDoc();
         });
 
         // Toolbar.
@@ -2071,7 +2280,7 @@
           record();
           doc.innerHTML = "<div><br></div>";
           shapes = [];
-          selected = null;
+          picked.clear();
           renderShapes();
           caretAt(doc.firstChild);
           showHelp(false);
@@ -2161,7 +2370,7 @@
           record();
           doc.innerHTML = clean(d.html);
           shapes = validShapes(d.shapes);
-          selected = null;
+          picked.clear();
           flattenBlocks();
           renderShapes();
           changed();
@@ -2171,20 +2380,44 @@
           toast(`「${file.name}」を開きました（⌘Z で元に戻せます）`);
           return true;
         }
+        // The memo's shortcuts are caught first wherever focus is, so the browser never
+        // acts on them (for example Chrome's ⌘⇧H home page or ⌘D bookmark).
         addEventListener(
           "keydown",
           (e) => {
-            if (!(e.metaKey || e.ctrlKey) || e.altKey || e.isComposing) return;
-            const k = e.key.toLowerCase();
-            if (k === "s") {
-              e.preventDefault();
-              e.stopPropagation();
-              saveFile(e.shiftKey);
-            } else if (k === "o" && !e.shiftKey) {
-              e.preventDefault();
-              e.stopPropagation();
-              chooseFile();
+            if (e.isComposing || e.keyCode === 229) return;
+            const mod = e.metaKey || e.ctrlKey,
+              c = e.code;
+            if (!mod && !e.altKey) return;
+            const inText = document.activeElement === doc || !picked.size,
+              text = (f) => () => {
+                if (!inText) return;
+                focusDoc();
+                f();
+              };
+            let act = null;
+            if (mod && !e.altKey) {
+              if (c === "KeyS") act = () => saveFile(e.shiftKey);
+              else if (c === "KeyO" && !e.shiftKey) act = chooseFile;
+              else if (c === "KeyH" && e.shiftKey) act = toggleHighlight;
+              else if (c === "KeyE" && e.shiftKey) act = toggleRed;
+              else if (c === "Digit8" && e.shiftKey) act = text(() => toggleList("UL"));
+              else if (c === "Digit7" && e.shiftKey) act = text(() => toggleList("OL"));
+              // Brackets go by the typed character so JIS and US layouts agree.
+              else if (e.key === "]" && !e.shiftKey) act = text(indent);
+              else if (e.key === "[" && !e.shiftKey) act = text(outdent);
+              else if (c === "KeyD" && !e.shiftKey)
+                act = () => (picked.size && document.activeElement !== doc ? duplicatePicked() : document.activeElement === doc && duplicateLine());
+              else if (c === "KeyY") act = () => undo(true);
+              else if (c === "KeyB" && e.shiftKey) act = () => {};
+            } else if (e.altKey && !mod && !e.shiftKey && (c === "KeyR" || c === "KeyA")) {
+              const t = c === "KeyR" ? "box" : "arrow";
+              act = () => setTool(tool === t ? null : t);
             }
+            if (!act) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (!e.target.closest?.(".label")) act();
           },
           true,
         );
