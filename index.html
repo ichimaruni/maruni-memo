@@ -673,6 +673,22 @@
       .embedded [data-cmd="open"] + .sep {
         display: none;
       }
+      /* The app's preview panel: the memo as it looks, read-only, without tools and with less room around it. */
+      .preview .toolbar,
+      .preview #help,
+      .preview #recent,
+      .preview #toast {
+        display: none !important;
+      }
+      .preview #page {
+        min-height: 0;
+        pointer-events: none;
+      }
+      .preview #doc {
+        min-height: 0;
+        padding: 20px 22px 40px;
+        font-size: 14px;
+      }
     </style>
   </head>
   <body>
@@ -3057,6 +3073,16 @@
             flush() {
               finishBoxEdit();
               save();
+            },
+            // Shows a memo read-only, for the app's preview panel: nothing is saved and nothing can be edited.
+            preview(name, text) {
+              document.documentElement.classList.add("preview");
+              doc.contentEditable = "false";
+              const ok = this.open(name, text);
+              hostFile = "";
+              clearTimeout(saveTimer);
+              doc.blur();
+              return ok;
             },
           };
           host.postMessage({ type: "ready" });

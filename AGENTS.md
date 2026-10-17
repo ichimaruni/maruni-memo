@@ -32,6 +32,7 @@ Mac用ファイルブラウザ「Maruni Repos」（https://github.com/ichimaruni
 - アプリは `window.maruniMemoHost.open(fileName, jsonText)` でメモファイルを渡す。戻り値は開けたら `true`、メモのファイルでなければ `false`。
 - 変更のたびに `host.postMessage({ type: "save", text })` を送る。`text` はファイルに保存する JSON（`kind: "maruni-memo"`、`v`、`savedAt`、`html`、`shapes`）で、アプリはこれを同じファイルにそのまま書き込む。
 - アプリは `window.maruniMemoHost.flush()` で入力途中の内容を保存させる。
+- アプリの詳細パネルは `window.maruniMemoHost.preview(fileName, jsonText)` でメモを読み取り専用で表示する（`<html>` に `preview` クラス、編集・保存なし、ツールバーなし）。
 - アプリ内では localStorage・最近のファイル（IndexedDB）・ファイル選択・ドロップで開く機能を使わない。
 
 アプリ内は Safari のエンジンで動くため、入力まわりの変更は Safari でも確認する（日本語入力の変換確定などで、Chrome と挙動が異なることがある）。
