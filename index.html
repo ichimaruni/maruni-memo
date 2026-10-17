@@ -2908,6 +2908,8 @@
               else if (c === "KeyO" && !host) act = e.shiftKey ? () => showRecent(recentPanel.hidden) : chooseFile;
               else if (c === "KeyH" && e.shiftKey) act = toggleHighlight;
               else if (c === "KeyE" && e.shiftKey) act = toggleRed;
+              // Bold is handled here too: WebKit does not always bind ⌘B in editable text.
+              else if (c === "KeyB" && !e.shiftKey && document.activeElement === doc) act = toggleBold;
               else if (c === "Digit8" && e.shiftKey) act = text(() => toggleList("UL"));
               else if (c === "Digit7" && e.shiftKey) act = text(() => toggleList("OL"));
               // Brackets go by the typed character so JIS and US layouts agree.
