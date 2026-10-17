@@ -30,12 +30,8 @@
         --color-red-900: #ce0000;
         --color-green-300: #71c598;
         --color-blue-300: #9db7f9;
-        --color-purple-50: #f1eafa;
-        --color-purple-100: #ecddff;
-        --color-purple-700: #6f23d0;
-        --color-purple-800: #5c10be;
 
-        /* Roles: white paper, near-black ink, purple interaction state. */
+        /* Roles: white paper, near-black ink, neutral interaction state. */
         --bg: var(--color-white);
         --ink: var(--color-gray-900);
         --muted: var(--color-gray-600);
@@ -43,9 +39,11 @@
         --border: var(--color-gray-200);
         --highlight: var(--color-yellow-300);
         --red: var(--color-red-900);
-        --accent: var(--color-purple-700);
-        --accent-bg: var(--color-purple-50);
-        --accent-ink: var(--color-purple-800);
+        --accent: var(--color-gray-900);
+        --accent-bg: var(--color-gray-100);
+        --accent-ink: var(--color-gray-900);
+        /* Translucent so highlight and red text stay visible while selected. */
+        --selection: rgba(0, 0, 0, 0.13);
         --font:
           -apple-system, BlinkMacSystemFont, "Hiragino Sans",
           "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", "Yu Gothic UI", Meiryo,
@@ -67,7 +65,7 @@
         -webkit-font-smoothing: antialiased;
       }
       ::selection {
-        background: var(--color-purple-100);
+        background: var(--selection);
       }
       button {
         font: inherit;
@@ -264,7 +262,7 @@
       }
       .box.target {
         box-shadow:
-          0 0 0 4px var(--accent-bg),
+          0 0 0 4px var(--color-gray-200),
           0 0 0 5px var(--accent);
       }
       .box .resize,
@@ -603,6 +601,8 @@
         <dd>四角に文字を入れる</dd>
         <dt><kbd>Delete</kbd> / <kbd>Esc</kbd></dt>
         <dd>選んだ図形を消す / 選択・描画をやめる</dd>
+        <dt><kbd class="mod">⌘</kbd>+<kbd>D</kbd> / <kbd class="mod">⌥</kbd>+ドラッグ</dt>
+        <dd>選んだ図形を複製する（文中では今の行を複製）</dd>
       </dl>
       <h2>その他</h2>
       <dl>
@@ -1557,6 +1557,43 @@
           renderShapes();
           scheduleSave();
         }
+        // Copies drop their bindings so a duplicate can be placed freely.
+        function copyShape(id, dx, dy) {
+          const s = byId(id);
+          if (!s) return null;
+          const c = clone(s);
+          c.id = uid();
+          if (c.type === "box") {
+            c.x += dx;
+            c.y += dy;
+          } else {
+            delete c.a;
+            delete c.b;
+            c.x1 += dx; c.x2 += dx; c.y1 += dy; c.y2 += dy;
+          }
+          shapes.push(c);
+          return c;
+        }
+        function duplicateShape(id) {
+          record();
+          const c = copyShape(id, 24, 24);
+          if (!c) return;
+          selected = c.id;
+          renderShapes();
+          scheduleSave();
+        }
+        function duplicateLine() {
+          const r = sel();
+          if (!r) return;
+          const it = closestLi(r.startContainer) || topBlock(r.startContainer);
+          if (!it) return;
+          record();
+          const c = it.cloneNode(true);
+          it.after(c);
+          caretAt(c, true);
+          changed();
+          c.scrollIntoView({ block: "nearest" });
+        }
         function editBox(id, text) {
           const el = boxEls.get(id),
             s = byId(id);
@@ -1673,7 +1710,13 @@
             selectShape(id);
             if (t.classList.contains("resize")) drag = { mode: "resize", id, start: p, orig: clone(byId(id)) };
             else if (t.classList.contains("conn")) drag = { mode: "connect", from: id, start: p };
-            else drag = { mode: "move", id, start: p, orig: clone(byId(id)) };
+            else if (e.altKey) {
+              record();
+              const c = copyShape(id, 0, 0);
+              selected = c.id;
+              drag = { mode: "move", id: c.id, start: p, orig: clone(c), copied: true, source: id, recorded: true };
+              renderShapes();
+            } else drag = { mode: "move", id, start: p, orig: clone(byId(id)) };
             page.setPointerCapture(e.pointerId);
             return;
           }
@@ -1682,9 +1725,14 @@
             finishBoxEdit();
             const id = arrowEl.dataset.id;
             selectShape(id);
-            drag = t.classList.contains("handle")
-              ? { mode: "end", id, end: t.dataset.end, start: p }
-              : { mode: "moveArrow", id, start: p, orig: clone(byId(id)) };
+            if (t.classList.contains("handle")) drag = { mode: "end", id, end: t.dataset.end, start: p };
+            else if (e.altKey) {
+              record();
+              const c = copyShape(id, 0, 0);
+              selected = c.id;
+              drag = { mode: "moveArrow", id: c.id, start: p, orig: clone(c), copied: true, source: id, recorded: true };
+              renderShapes();
+            } else drag = { mode: "moveArrow", id, start: p, orig: clone(byId(id)) };
             page.setPointerCapture(e.pointerId);
             return;
           }
@@ -1700,7 +1748,7 @@
           if (!drag.moved) {
             if (Math.hypot(dx, dy) < 4) return;
             drag.moved = true;
-            record();
+            if (!drag.recorded) record();
           }
           if (drag.mode === "move") {
             const s = byId(drag.id);
@@ -1752,6 +1800,11 @@
           drag = null;
           hoverTarget = null;
           if (!d) return;
+          if (d.copied && !d.moved) {
+            shapes = shapes.filter((s) => s.id !== d.id);
+            undoStack.pop();
+            selected = d.source;
+          }
           if (d.mode === "newBox") {
             let s = d.id && byId(d.id);
             if (!s) {
@@ -1835,6 +1888,7 @@
           else if (mod && e.shiftKey && e.code === "KeyH") toggleHighlight();
           else if (mod && e.shiftKey && e.code === "KeyE") toggleRed();
           else if (mod && !e.shiftKey && k === "s") toast("自動で保存されています");
+          else if (mod && !e.shiftKey && k === "d") duplicateLine();
           else if (e.altKey && !mod && e.code === "KeyR") setTool(tool === "box" ? null : "box");
           else if (e.altKey && !mod && e.code === "KeyA") setTool(tool === "arrow" ? null : "arrow");
           else if (e.altKey && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown"))
@@ -1938,6 +1992,9 @@
             setTool(null);
             showHelp(false);
             deselect();
+          } else if (s && mod && k === "d") {
+            e.preventDefault();
+            duplicateShape(s.id);
           } else if (s && (e.key === "Delete" || e.key === "Backspace")) {
             e.preventDefault();
             removeShape(s.id);
