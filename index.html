@@ -1400,7 +1400,8 @@
           t.setEnd(r.startContainer, r.startOffset);
           const m = t
             .toString()
-            .match(/^(?:([-*・•－])|(\d{1,3})[.)．）])[  　]$/);
+            // Japanese input turns "-" into "ー" (or "－", "―") and "1." into "１．", so those count too.
+            .match(/^(?:([-*・•－ー―‐−])|([0-9０-９]{1,3})[.)．）])[  　]$/);
           if (!m) return;
           record();
           t.deleteContents();
