@@ -790,6 +790,8 @@
         <dd>赤字</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>B</kbd></dt>
         <dd>太字</dd>
+        <dt><kbd class="mod">⌘</kbd>+<kbd>U</kbd></dt>
+        <dd>下線</dd>
       </dl>
       <h2>四角・矢印</h2>
       <dl>
@@ -1532,6 +1534,12 @@
           focusDoc();
           record();
           exec("bold");
+          changed();
+        }
+        function toggleUnderline() {
+          focusDoc();
+          record();
+          exec("underline");
           changed();
         }
 
@@ -2349,29 +2357,33 @@
         });
         doc.addEventListener("input", (e) => {
           placeFold(null);
-          if (e.inputType === "insertFromComposition") restoreComposingItem();
+          if (e.inputType === "insertFromComposition") restoreRemovedItem();
+          else if (/^delete/.test(e.inputType) && e.inputType !== "deleteCompositionText") restoreRemovedItem();
           if (e.isComposing) return scheduleSave();
           if (/^insert(Text|CompositionText)$/.test(e.inputType)) autoList();
           changed();
         });
-        // Safari (and the Mac app's web view) confirms Japanese input by deleting the composed text, then inserting
-        // the result. Deleting the only text of a list item drops the item itself (WebKit does this when the item is
-        // position: relative, which the bullets need), so the confirmed text landed loose in the list. Put it back.
-        let composingItem = null;
+        // Safari (and the Mac app's web view) drops a list item itself when all of its text is deleted at once
+        // (WebKit does this when the item is position: relative, which the bullets need): selecting the text and
+        // deleting it, or confirming Japanese input, which deletes the composed text before inserting the result.
+        // What is left (a line break or the confirmed text) lands loose in the list. Put it back in the item.
+        let removedItem = null;
         doc.addEventListener(
           "beforeinput",
           (e) => {
-            if (e.inputType !== "deleteCompositionText") return;
-            const r = sel();
-            composingItem = r && closestLi(r.startContainer);
+            if (!/^delete/.test(e.inputType)) return;
+            const r = sel(),
+              li = r && closestLi(r.startContainer);
+            removedItem = li && { li, list: li.parentNode };
           },
           true,
         );
-        function restoreComposingItem() {
-          const li = composingItem;
-          composingItem = null;
-          if (!li || li.isConnected) return;
-          for (const list of doc.querySelectorAll("ul, ol")) {
+        function restoreRemovedItem() {
+          const it = removedItem;
+          removedItem = null;
+          if (!it || it.li.isConnected) return;
+          const li = it.li;
+          for (const list of it.list.isConnected ? [it.list] : doc.querySelectorAll("ul, ol")) {
             const loose = [...list.childNodes].filter(
               (n) => (n.nodeType === 3 && n.textContent !== "") || (n.nodeType === 1 && n.tagName !== "LI" && !isList(n)),
             );
@@ -2385,6 +2397,7 @@
         }
         doc.addEventListener("compositionend", () => {
           setTimeout(() => {
+            restoreRemovedItem();
             autoList();
             changed();
           });
@@ -2924,8 +2937,9 @@
               else if (c === "KeyO" && !host) act = e.shiftKey ? () => showRecent(recentPanel.hidden) : chooseFile;
               else if (c === "KeyH" && e.shiftKey) act = toggleHighlight;
               else if (c === "KeyE" && e.shiftKey) act = toggleRed;
-              // Bold is handled here too: WebKit does not always bind ⌘B in editable text.
+              // Bold and underline are handled here too: WebKit does not always bind ⌘B / ⌘U in editable text.
               else if (c === "KeyB" && !e.shiftKey && document.activeElement === doc) act = toggleBold;
+              else if (c === "KeyU" && !e.shiftKey && document.activeElement === doc) act = toggleUnderline;
               else if (c === "Digit8" && e.shiftKey) act = text(() => toggleList("UL"));
               else if (c === "Digit7" && e.shiftKey) act = text(() => toggleList("OL"));
               // Brackets go by the typed character so JIS and US layouts agree.
