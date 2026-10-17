@@ -22,3 +22,16 @@ commit、push、公開反映の確認が完了するまで、作業を完了扱�
 - 公開サイト: https://ichimaruni.github.io/maruni-memo/
 - 公開元: `main` ブランチのルート
 - 作業ディレクトリ: `/Users/saikai/projects/maruni-memo`
+
+## Maruni Repos との連携（壊さないこと）
+
+Mac用ファイルブラウザ「Maruni Repos」（https://github.com/ichimaruni/maruni-repos ）は、メモのタブで公開サイトをそのまま WKWebView（Safari と同じエンジン）に読み込んで使っている。公開サイトへの変更はアプリにも即座に反映されるため、次の取り決めを変えない。変える必要がある場合は、Maruni Repos 側（`Sources/MaruniReposApp/Views/MemoTabView.swift` の `MemoSession`）も同時に直す。
+
+- アプリ内かどうかは `window.webkit.messageHandlers.maruniRepos` の有無で判定している（`host`）。このとき `<html>` に `embedded` クラスが付き、新規・保存・ファイルを開くボタンは隠れる。
+- ページの準備ができたら `host.postMessage({ type: "ready" })` を送る。
+- アプリは `window.maruniMemoHost.open(fileName, jsonText)` でメモファイルを渡す。戻り値は開けたら `true`、メモのファイルでなければ `false`。
+- 変更のたびに `host.postMessage({ type: "save", text })` を送る。`text` はファイルに保存する JSON（`kind: "maruni-memo"`、`v`、`savedAt`、`html`、`shapes`）で、アプリはこれを同じファイルにそのまま書き込む。
+- アプリは `window.maruniMemoHost.flush()` で入力途中の内容を保存させる。
+- アプリ内では localStorage・最近のファイル（IndexedDB）・ファイル選択・ドロップで開く機能を使わない。
+
+アプリ内は Safari のエンジンで動くため、入力まわりの変更は Safari でも確認する（日本語入力の変換確定などで、Chrome と挙動が異なることがある）。
