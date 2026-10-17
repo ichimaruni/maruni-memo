@@ -95,15 +95,6 @@
         overflow-wrap: anywhere;
         caret-color: var(--accent);
       }
-      #doc.empty > div:first-child {
-        position: relative;
-      }
-      #doc.empty > div:first-child::before {
-        content: "ここに書けます。「- 」で箇条書き、Tab でインデント";
-        position: absolute;
-        color: var(--color-gray-400);
-        pointer-events: none;
-      }
 
       /* Outline: custom bullets per depth and vertical indent guides. */
       #doc ul,
@@ -555,6 +546,13 @@
       ><button data-cmd="arrow" title="矢印（⌥A）四角から四角へドラッグ" aria-label="矢印">
         <svg viewBox="0 0 24 24"><path d="M4 12h15M14 7l5 5-5 5" /></svg></button
       ><span class="sep"></span
+      ><button data-cmd="save" title="ファイルに保存（⌘S）" aria-label="ファイルに保存">
+        <svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" /></svg></button
+      ><button data-cmd="open" title="ファイルを開く（⌘O）" aria-label="ファイルを開く">
+        <svg viewBox="0 0 24 24">
+          <path d="M3.5 7.5v10a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V9.5A1.5 1.5 0 0 0 19 8h-7l-2-2.5H5a1.5 1.5 0 0 0-1.5 1.5z" />
+        </svg></button
+      ><span class="sep"></span
       ><button data-cmd="help" title="使い方" aria-label="使い方" aria-expanded="false">
         <svg viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="8.5" />
@@ -608,8 +606,14 @@
       <dl>
         <dt><kbd class="mod">⌘</kbd>+<kbd>Z</kbd> / <kbd class="mod">⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></dt>
         <dd>元に戻す / やり直す</dd>
-        <dt>保存</dt>
-        <dd>このブラウザに自動で保存されます</dd>
+        <dt><kbd class="mod">⌘</kbd>+<kbd>S</kbd></dt>
+        <dd>ファイルに保存（デスクトップやダウンロードなど）。2回目からは同じファイルに上書き</dd>
+        <dt><kbd class="mod">⌘</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></dt>
+        <dd>別のファイルに保存</dd>
+        <dt><kbd class="mod">⌘</kbd>+<kbd>O</kbd> / ドロップ</dt>
+        <dd>保存したファイルを開く（画面にドラッグしても開ける）</dd>
+        <dt>自動保存</dt>
+        <dd>ファイルとは別に、このブラウザにも常に保存されます</dd>
       </dl>
       <button id="clear" type="button">すべて消して新しいメモにする</button>
     </section>
@@ -1326,10 +1330,6 @@
 
         function changed() {
           normalize();
-          doc.classList.toggle(
-            "empty",
-            blank(doc.textContent) && !doc.querySelector("li") && doc.children.length <= 1,
-          );
           layoutPage();
           updateToolbar();
           scheduleSave();
@@ -1887,7 +1887,6 @@
           else if (mod && e.shiftKey && e.code === "Digit7") toggleList("OL");
           else if (mod && e.shiftKey && e.code === "KeyH") toggleHighlight();
           else if (mod && e.shiftKey && e.code === "KeyE") toggleRed();
-          else if (mod && !e.shiftKey && k === "s") toast("自動で保存されています");
           else if (mod && !e.shiftKey && k === "d") duplicateLine();
           else if (e.altKey && !mod && e.code === "KeyR") setTool(tool === "box" ? null : "box");
           else if (e.altKey && !mod && e.code === "KeyA") setTool(tool === "arrow" ? null : "arrow");
@@ -1968,7 +1967,13 @@
           document.execCommand("delete");
           changed();
         });
-        doc.addEventListener("drop", (e) => e.preventDefault());
+        // Dropping a saved file anywhere opens it; other drops are ignored.
+        addEventListener("dragover", (e) => e.preventDefault());
+        addEventListener("drop", (e) => {
+          e.preventDefault();
+          const f = e.dataTransfer?.files?.[0];
+          if (f) openFile(f);
+        });
         document.addEventListener("selectionchange", () => {
           const r = sel();
           if (r && document.activeElement === doc) lastRange = r.cloneRange();
@@ -2029,6 +2034,8 @@
           const cmd = b.dataset.cmd;
           if (cmd === "box" || cmd === "arrow") return setTool(tool === cmd ? null : cmd);
           if (cmd === "help") return showHelp(help.hidden);
+          if (cmd === "save") return saveFile(false);
+          if (cmd === "open") return chooseFile();
           if (cmd === "hl") return toggleHighlight();
           if (cmd === "red") return toggleRed();
           if (cmd === "bold") return toggleBold();
@@ -2076,6 +2083,111 @@
           for (const b of document.querySelectorAll("[title]")) b.title = pc(b.title);
           for (const k of document.querySelectorAll("kbd.mod")) k.textContent = k.textContent === "⌘" ? "Ctrl" : "Alt";
         }
+
+        // Files. Chrome and Edge save in place with a file handle; others download a copy.
+        const FILE_KIND = "maruni-memo",
+          FILE_TYPES = [{ description: "メモ", accept: { "application/json": [".json"] } }];
+        let fileHandle = null;
+        function fileName() {
+          const first = (doc.innerText || "").split("\n").map((l) => l.trim()).find(Boolean) || "メモ";
+          const d = new Date(),
+            p = (n) => String(n).padStart(2, "0");
+          return `${first.replace(/[\\/:*?"<>|]/g, " ").slice(0, 30).trim()} ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`;
+        }
+        function fileText() {
+          finishBoxEdit();
+          return JSON.stringify(
+            { kind: FILE_KIND, v: 2, savedAt: new Date().toISOString(), html: doc.innerHTML, shapes },
+            null,
+            1,
+          );
+        }
+        async function saveFile(saveAs) {
+          const text = fileText();
+          if (window.showSaveFilePicker) {
+            try {
+              if (!fileHandle || saveAs)
+                fileHandle = await showSaveFilePicker({
+                  id: FILE_KIND,
+                  startIn: "desktop",
+                  suggestedName: fileName(),
+                  types: FILE_TYPES,
+                });
+              const w = await fileHandle.createWritable();
+              await w.write(text);
+              await w.close();
+              toast(`「${fileHandle.name}」に保存しました`);
+            } catch (err) {
+              if (err.name !== "AbortError") toast("保存できませんでした: " + err.message);
+            }
+            return;
+          }
+          const a = document.createElement("a"),
+            url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+          a.href = url;
+          a.download = fileName();
+          document.body.append(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          toast(`「${a.download}」をダウンロードしました`);
+        }
+        async function chooseFile() {
+          if (window.showOpenFilePicker) {
+            try {
+              const [h] = await showOpenFilePicker({ id: FILE_KIND, startIn: "desktop", types: FILE_TYPES });
+              if (await openFile(await h.getFile())) fileHandle = h;
+            } catch (err) {
+              if (err.name !== "AbortError") toast("開けませんでした: " + err.message);
+            }
+            return;
+          }
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = ".json,application/json";
+          input.onchange = () => input.files[0] && openFile(input.files[0]);
+          input.click();
+        }
+        async function openFile(file) {
+          let d = null;
+          try {
+            d = JSON.parse(await file.text());
+          } catch {}
+          if (!d || d.kind !== FILE_KIND || typeof d.html !== "string") {
+            toast("このメモで保存したファイルではないため、開けません");
+            return false;
+          }
+          finishBoxEdit();
+          record();
+          doc.innerHTML = clean(d.html);
+          shapes = validShapes(d.shapes);
+          selected = null;
+          flattenBlocks();
+          renderShapes();
+          changed();
+          caretAt(doc.lastElementChild, true);
+          scrollTo(0, 0);
+          fileHandle = null;
+          toast(`「${file.name}」を開きました（⌘Z で元に戻せます）`);
+          return true;
+        }
+        addEventListener(
+          "keydown",
+          (e) => {
+            if (!(e.metaKey || e.ctrlKey) || e.altKey || e.isComposing) return;
+            const k = e.key.toLowerCase();
+            if (k === "s") {
+              e.preventDefault();
+              e.stopPropagation();
+              saveFile(e.shiftKey);
+            } else if (k === "o" && !e.shiftKey) {
+              e.preventDefault();
+              e.stopPropagation();
+              chooseFile();
+            }
+          },
+          true,
+        );
 
         // Loading, including a one-time move from the v1 canvas board.
         function migrate(nodes) {
