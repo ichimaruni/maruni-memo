@@ -438,6 +438,99 @@
         font-size: 13px;
         line-height: 1.6;
       }
+      .pop .list {
+        display: grid;
+        gap: 2px;
+        margin: 0 -8px 12px;
+      }
+      .pop .row {
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+      }
+      .pop .row:hover,
+      .pop .row.current {
+        background: var(--color-gray-50);
+      }
+      .pop .item {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        padding: 6px 8px;
+        text-align: left;
+      }
+      .pop .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 600;
+      }
+      .pop .meta,
+      .pop .empty {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .pop .empty {
+        margin: 0 8px;
+      }
+      .pop .remove {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .pop .remove:hover {
+        background: var(--color-gray-100);
+        color: var(--ink);
+      }
+      .pop .pick {
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      .pop .pick:hover {
+        background: var(--color-gray-50);
+      }
+      #ask {
+        width: min(420px, calc(100vw - 32px));
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+        color: var(--ink);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      #ask::backdrop {
+        background: rgba(0, 0, 0, 0.2);
+      }
+      #ask p {
+        margin: 0 0 8px;
+      }
+      #ask .sub {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      #ask .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      #ask button {
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      #ask button.primary {
+        border-color: var(--ink);
+        background: var(--ink);
+        color: var(--color-white);
+      }
       .help[hidden] {
         display: none;
       }
@@ -572,7 +665,7 @@
       ><span class="sep"></span
       ><button data-cmd="save" title="ファイルに保存（⌘S）" aria-label="ファイルに保存">
         <svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" /></svg></button
-      ><button data-cmd="open" title="ファイルを開く（⌘O）" aria-label="ファイルを開く">
+      ><button data-cmd="open" title="最近のファイル（⌘⇧O）・ファイルを開く（⌘O）" aria-label="最近のファイル" aria-expanded="false">
         <svg viewBox="0 0 24 24">
           <path d="M3.5 7.5v10a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V9.5A1.5 1.5 0 0 0 19 8h-7l-2-2.5H5a1.5 1.5 0 0 0-1.5 1.5z" />
         </svg></button
@@ -640,11 +733,29 @@
         <dd>別のファイルに保存</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>O</kbd> / ドロップ</dt>
         <dd>保存したファイルを開く（画面にドラッグしても開ける）</dd>
+        <dt><kbd class="mod">⌘</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> / フォルダのボタン</dt>
+        <dd>最近のファイルに切り替える。今のメモはファイルに上書きしてから切り替わる（未保存なら確認）</dd>
         <dt>自動保存</dt>
         <dd>ファイルとは別に、このブラウザにも常に保存されます</dd>
       </dl>
-      <button id="clear" type="button">すべて消して新しいメモにする</button>
+      <button id="clear" type="button">新しいメモにする</button>
     </section>
+    <section id="recent" class="help pop" hidden aria-label="最近のファイル">
+      <h2>最近のファイル</h2>
+      <div class="list"></div>
+      <button class="pick" type="button">ほかのファイルを選んで開く… <kbd class="mod">⌘</kbd>+<kbd>O</kbd></button>
+    </section>
+    <dialog id="ask" aria-labelledby="ask-title">
+      <form method="dialog">
+        <p id="ask-title"><b>今のメモは、まだファイルに保存していません。</b></p>
+        <p class="sub">切り替える前に保存しますか？保存しなくても、切り替えた直後なら ⌘Z で戻せます。</p>
+        <div class="actions">
+          <button value="cancel" type="submit">やめる</button>
+          <button value="discard" type="submit">保存せずに切り替え</button>
+          <button value="save" type="submit" class="primary" autofocus>保存して切り替え</button>
+        </div>
+      </form>
+    </dialog>
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script>
@@ -1367,6 +1478,7 @@
           scheduleSave();
         }
         function scheduleSave() {
+          dirty = true;
           clearTimeout(saveTimer);
           saveTimer = setTimeout(save, 300);
         }
@@ -1375,7 +1487,7 @@
           try {
             localStorage.setItem(
               KEY,
-              JSON.stringify({ v: 2, html: doc.innerHTML, shapes, caret: caretPath(), scroll: scrollY }),
+              JSON.stringify({ v: 2, html: doc.innerHTML, shapes, caret: caretPath(), scroll: scrollY, fileKey, dirty }),
             );
           } catch {
             toast("保存できません。ブラウザの保存容量を確認してください。");
@@ -2181,10 +2293,19 @@
         });
         // Dropping a saved file anywhere opens it; other drops are ignored.
         addEventListener("dragover", (e) => e.preventDefault());
-        addEventListener("drop", (e) => {
+        addEventListener("drop", async (e) => {
           e.preventDefault();
           const f = e.dataTransfer?.files?.[0];
-          if (f) openFile(f);
+          if (!f) return;
+          // The handle has to be requested while the drop event is still running.
+          const pending = e.dataTransfer.items?.[0]?.getAsFileSystemHandle?.();
+          if (!(await settleCurrent())) return;
+          let h = null;
+          try {
+            h = (await pending) || null;
+            if (h && h.kind !== "file") h = null;
+          } catch {}
+          openFile(f, h);
         });
         document.addEventListener("selectionchange", () => {
           const r = sel();
@@ -2195,7 +2316,8 @@
         // Keys outside the document act on shapes.
         addEventListener("keydown", (e) => {
           if (e.target === doc || e.isComposing || e.defaultPrevented) return;
-          if (e.target.closest?.(".toolbar, .help") && (e.key === "Enter" || e.key === " ")) return;
+          if (e.target.closest?.("dialog, .help")) return;
+          if (e.target.closest?.(".toolbar") && (e.key === "Enter" || e.key === " ")) return;
           const mod = e.metaKey || e.ctrlKey,
             k = e.key.toLowerCase(),
             s = solo();
@@ -2244,7 +2366,7 @@
           if (cmd === "box" || cmd === "arrow") return setTool(tool === cmd ? null : cmd);
           if (cmd === "help") return showHelp(help.hidden);
           if (cmd === "save") return saveFile(false);
-          if (cmd === "open") return chooseFile();
+          if (cmd === "open") return showRecent(recentPanel.hidden);
           if (cmd === "hl") return toggleHighlight();
           if (cmd === "red") return toggleRed();
           if (cmd === "bold") return toggleBold();
@@ -2270,14 +2392,20 @@
         }
         function showHelp(on) {
           help.hidden = !on;
+          if (on) showRecent(false);
           toolbar.querySelector('[data-cmd="help"]').setAttribute("aria-expanded", on ? "true" : "false");
         }
         document.addEventListener("pointerdown", (e) => {
           if (!help.hidden && !e.target.closest(".help, [data-cmd=help]")) showHelp(false);
         });
-        $("#clear").addEventListener("click", () => {
-          if (!confirm("すべて消して新しいメモにしますか？")) return;
+        $("#clear").addEventListener("click", async () => {
+          if (!confirm("新しいメモにしますか？（今のメモは、ファイルに保存済みなら上書きしてから閉じます）")) return;
+          if (!(await settleCurrent())) return;
           record();
+          fileHandle = null;
+          fileKey = null;
+          fileLabel = "";
+          showFileTitle();
           doc.innerHTML = "<div><br></div>";
           shapes = [];
           picked.clear();
@@ -2285,6 +2413,8 @@
           caretAt(doc.firstChild);
           showHelp(false);
           changed();
+          dirty = false;
+          save();
           toast("新しいメモにしました。⌘Z で元に戻せます");
         });
         if (!isMac) {
@@ -2295,8 +2425,12 @@
 
         // Files. Chrome and Edge save in place with a file handle; others download a copy.
         const FILE_KIND = "maruni-memo",
-          FILE_TYPES = [{ description: "メモ", accept: { "application/json": [".json"] } }];
-        let fileHandle = null;
+          FILE_TYPES = [{ description: "メモ", accept: { "application/json": [".json"] } }],
+          RECENT_LIMIT = 20;
+        let fileHandle = null,
+          fileKey = null,
+          fileLabel = "",
+          dirty = false;
         function fileName() {
           const first = (doc.innerText || "").split("\n").map((l) => l.trim()).find(Boolean) || "メモ";
           const d = new Date(),
@@ -2311,6 +2445,71 @@
             1,
           );
         }
+        function showFileTitle() {
+          document.title = fileLabel ? `${fileLabel.replace(/\.json$/i, "")} – メモ` : "メモ";
+        }
+
+        // Recent files live in IndexedDB: the file handle where the browser has one,
+        // plus the last saved or opened content as a fallback.
+        function idb() {
+          return new Promise((resolve, reject) => {
+            const r = indexedDB.open("maruni-memo", 1);
+            r.onupgradeneeded = () => r.result.createObjectStore("recent", { keyPath: "key" });
+            r.onsuccess = () => resolve(r.result);
+            r.onerror = () => reject(r.error);
+          });
+        }
+        async function store(mode, fn) {
+          const db = await idb();
+          return new Promise((resolve, reject) => {
+            const t = db.transaction("recent", mode),
+              req = fn(t.objectStore("recent"));
+            t.oncomplete = () => resolve(req && req.result);
+            t.onerror = () => reject(t.error);
+          });
+        }
+        async function recentList() {
+          try {
+            return ((await store("readonly", (s) => s.getAll())) || []).sort((a, b) => b.at - a.at);
+          } catch {
+            return [];
+          }
+        }
+        async function forget(key) {
+          try {
+            await store("readwrite", (s) => s.delete(key));
+          } catch {}
+        }
+        async function remember(handle, name, text) {
+          try {
+            let hit = null;
+            for (const r of await recentList()) {
+              if (handle && r.handle) {
+                try {
+                  if (await r.handle.isSameEntry(handle)) hit = r;
+                } catch {}
+              } else if (!handle && !r.handle && r.name === name) hit = r;
+              if (hit) break;
+            }
+            const entry = { key: hit ? hit.key : uid(), name, handle: handle || null, text, at: Date.now() };
+            await store("readwrite", (s) => s.put(entry));
+            for (const r of (await recentList()).slice(RECENT_LIMIT)) await forget(r.key);
+            fileKey = entry.key;
+          } catch {
+            fileKey = null;
+          }
+          fileLabel = name;
+          showFileTitle();
+          save();
+        }
+        async function allowed(h) {
+          const o = { mode: "readwrite" };
+          if (!h.queryPermission) return true;
+          if ((await h.queryPermission(o)) === "granted") return true;
+          return (await h.requestPermission(o)) === "granted";
+        }
+
+        // Returns true when the memo was written somewhere.
         async function saveFile(saveAs) {
           const text = fileText();
           if (window.showSaveFilePicker) {
@@ -2322,14 +2521,21 @@
                   suggestedName: fileName(),
                   types: FILE_TYPES,
                 });
+              else if (!(await allowed(fileHandle))) {
+                toast("ファイルへの書き込みが許可されませんでした");
+                return false;
+              }
               const w = await fileHandle.createWritable();
               await w.write(text);
               await w.close();
+              dirty = false;
+              await remember(fileHandle, fileHandle.name, text);
               toast(`「${fileHandle.name}」に保存しました`);
+              return true;
             } catch (err) {
               if (err.name !== "AbortError") toast("保存できませんでした: " + err.message);
+              return false;
             }
-            return;
           }
           const a = document.createElement("a"),
             url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
@@ -2339,13 +2545,37 @@
           a.click();
           a.remove();
           setTimeout(() => URL.revokeObjectURL(url), 1000);
+          dirty = false;
+          await remember(null, a.download, text);
           toast(`「${a.download}」をダウンロードしました`);
+          return true;
+        }
+
+        // Before replacing the memo: overwrite its file, or ask when it has never been saved.
+        const ask = $("#ask");
+        function askUnsaved() {
+          return new Promise((resolve) => {
+            ask.returnValue = "cancel";
+            ask.onclose = () => resolve(ask.returnValue || "cancel");
+            ask.showModal();
+          });
+        }
+        async function settleCurrent() {
+          finishBoxEdit();
+          if (!dirty) return true;
+          if (fileHandle) return saveFile(false);
+          if (blank(doc.textContent) && !shapes.length) return true;
+          const choice = await askUnsaved();
+          if (choice === "save") return saveFile(true);
+          return choice === "discard";
         }
         async function chooseFile() {
+          showRecent(false);
+          if (!(await settleCurrent())) return;
           if (window.showOpenFilePicker) {
             try {
               const [h] = await showOpenFilePicker({ id: FILE_KIND, startIn: "desktop", types: FILE_TYPES });
-              if (await openFile(await h.getFile())) fileHandle = h;
+              await openFile(await h.getFile(), h);
             } catch (err) {
               if (err.name !== "AbortError") toast("開けませんでした: " + err.message);
             }
@@ -2357,10 +2587,12 @@
           input.onchange = () => input.files[0] && openFile(input.files[0]);
           input.click();
         }
-        async function openFile(file) {
-          let d = null;
+        async function openFile(file, handle = null) {
+          let d = null,
+            text = "";
           try {
-            d = JSON.parse(await file.text());
+            text = await file.text();
+            d = JSON.parse(text);
           } catch {}
           if (!d || d.kind !== FILE_KIND || typeof d.html !== "string") {
             toast("このメモで保存したファイルではないため、開けません");
@@ -2376,9 +2608,97 @@
           changed();
           caretAt(doc.lastElementChild, true);
           scrollTo(0, 0);
-          fileHandle = null;
+          fileHandle = handle;
+          dirty = false;
+          await remember(handle, file.name, text);
           toast(`「${file.name}」を開きました（⌘Z で元に戻せます）`);
           return true;
+        }
+        async function switchTo(entry) {
+          showRecent(false);
+          if (entry.key === fileKey && !dirty) return;
+          if (!(await settleCurrent())) return;
+          if (!entry.handle) return openFile(new File([entry.text || ""], entry.name));
+          try {
+            if (!(await allowed(entry.handle))) return toast("ファイルを開く許可がありませんでした");
+            await openFile(await entry.handle.getFile(), entry.handle);
+          } catch (err) {
+            if (err.name !== "NotFoundError" && err.name !== "NotReadableError")
+              return toast("開けませんでした: " + err.message);
+            await forget(entry.key);
+            if (
+              entry.text &&
+              confirm(`「${entry.name}」が見つかりません。移動か削除された可能性があります。\n最後に保存・開いた時点の内容を開きますか？`)
+            )
+              await openFile(new File([entry.text], entry.name));
+            else toast(`「${entry.name}」を一覧から外しました`);
+          }
+        }
+
+        // Recent files panel.
+        const recentPanel = $("#recent");
+        function when(t) {
+          const d = new Date(t),
+            now = new Date(),
+            p = (n) => String(n).padStart(2, "0"),
+            hm = `${p(d.getHours())}:${p(d.getMinutes())}`;
+          if (d.toDateString() === now.toDateString()) return `今日 ${hm}`;
+          return d.getFullYear() === now.getFullYear()
+            ? `${d.getMonth() + 1}/${d.getDate()} ${hm}`
+            : `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        }
+        async function showRecent(on) {
+          recentPanel.hidden = !on;
+          toolbar.querySelector('[data-cmd="open"]').setAttribute("aria-expanded", on ? "true" : "false");
+          if (!on) return;
+          showHelp(false);
+          const list = recentPanel.querySelector(".list"),
+            items = await recentList();
+          list.textContent = "";
+          if (!items.length) {
+            const p = list.appendChild(document.createElement("p"));
+            p.className = "empty";
+            p.textContent = "まだありません。保存したり開いたりしたファイルがここに並びます。";
+          }
+          for (const it of items) {
+            const row = list.appendChild(document.createElement("div"));
+            row.className = "row" + (it.key === fileKey ? " current" : "");
+            const open = row.appendChild(document.createElement("button"));
+            open.className = "item";
+            open.type = "button";
+            open.setAttribute("aria-label", `${it.name} を開く`);
+            const name = open.appendChild(document.createElement("span"));
+            name.className = "name";
+            name.textContent = it.name.replace(/\.json$/i, "");
+            const meta = open.appendChild(document.createElement("span"));
+            meta.className = "meta";
+            meta.textContent = (it.key === fileKey ? "編集中 · " : "") + when(it.at) + (it.handle ? "" : " · 保存時点の内容");
+            open.onclick = () => switchTo(it);
+            const x = row.appendChild(document.createElement("button"));
+            x.className = "remove";
+            x.type = "button";
+            x.title = "一覧から外す（ファイルは消えません）";
+            x.setAttribute("aria-label", `${it.name} を一覧から外す`);
+            x.textContent = "×";
+            x.onclick = async () => {
+              await forget(it.key);
+              if (it.key === fileKey) fileKey = null;
+              showRecent(true);
+            };
+          }
+        }
+        recentPanel.querySelector(".pick").addEventListener("click", chooseFile);
+        document.addEventListener("pointerdown", (e) => {
+          if (!recentPanel.hidden && !e.target.closest("#recent, [data-cmd=open], #ask")) showRecent(false);
+        });
+        async function restoreFile(key) {
+          if (!key) return;
+          const entry = (await recentList()).find((r) => r.key === key);
+          if (!entry) return;
+          fileKey = key;
+          fileHandle = entry.handle || null;
+          fileLabel = entry.name;
+          showFileTitle();
         }
         // The memo's shortcuts are caught first wherever focus is, so the browser never
         // acts on them (for example Chrome's ⌘⇧H home page or ⌘D bookmark).
@@ -2398,7 +2718,7 @@
             let act = null;
             if (mod && !e.altKey) {
               if (c === "KeyS") act = () => saveFile(e.shiftKey);
-              else if (c === "KeyO" && !e.shiftKey) act = chooseFile;
+              else if (c === "KeyO") act = e.shiftKey ? () => showRecent(recentPanel.hidden) : chooseFile;
               else if (c === "KeyH" && e.shiftKey) act = toggleHighlight;
               else if (c === "KeyE" && e.shiftKey) act = toggleRed;
               else if (c === "Digit8" && e.shiftKey) act = text(() => toggleList("UL"));
@@ -2512,6 +2832,8 @@
         changed();
         if (!restoreCaretPath(saved.caret)) caretAt(doc.lastElementChild, true);
         if (num(saved.scroll)) scrollTo(0, saved.scroll);
+        dirty = !!saved.dirty;
+        restoreFile(saved.fileKey);
         addEventListener("resize", layoutPage);
         addEventListener("pagehide", save);
         document.addEventListener("visibilitychange", () => {
