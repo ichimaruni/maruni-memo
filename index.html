@@ -2333,10 +2333,40 @@
         });
         doc.addEventListener("input", (e) => {
           placeFold(null);
+          if (e.inputType === "insertFromComposition") restoreComposingItem();
           if (e.isComposing) return scheduleSave();
           if (/^insert(Text|CompositionText)$/.test(e.inputType)) autoList();
           changed();
         });
+        // Safari (and the Mac app's web view) confirms Japanese input by deleting the composed text, then inserting
+        // the result. Deleting the only text of a list item drops the item itself (WebKit does this when the item is
+        // position: relative, which the bullets need), so the confirmed text landed loose in the list. Put it back.
+        let composingItem = null;
+        doc.addEventListener(
+          "beforeinput",
+          (e) => {
+            if (e.inputType !== "deleteCompositionText") return;
+            const r = sel();
+            composingItem = r && closestLi(r.startContainer);
+          },
+          true,
+        );
+        function restoreComposingItem() {
+          const li = composingItem;
+          composingItem = null;
+          if (!li || li.isConnected) return;
+          for (const list of doc.querySelectorAll("ul, ol")) {
+            const loose = [...list.childNodes].filter(
+              (n) => (n.nodeType === 3 && n.textContent !== "") || (n.nodeType === 1 && n.tagName !== "LI" && !isList(n)),
+            );
+            if (!loose.length) continue;
+            li.replaceChildren();
+            loose[0].before(li);
+            li.append(...loose);
+            caretAt(li, true);
+            return;
+          }
+        }
         doc.addEventListener("compositionend", () => {
           setTimeout(() => {
             autoList();
