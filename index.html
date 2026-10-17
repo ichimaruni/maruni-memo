@@ -160,70 +160,6 @@
         padding-left: 12px;
         border-left: 1px solid var(--guide);
       }
-      #doc li.collapsed > :is(ul, ol) {
-        display: none;
-      }
-      /* Folded items: a ringed bullet plus a "N件" pill that also reopens it. */
-      #doc ul > li.collapsed::before {
-        background: var(--ink);
-        border: 0;
-        box-shadow: 0 0 0 4px var(--color-gray-200);
-      }
-      #doc ol > li.collapsed::before {
-        color: var(--ink);
-        font-weight: 700;
-      }
-      #doc li.collapsed::after {
-        content: attr(data-hidden) "件";
-        display: inline-block;
-        margin-left: 8px;
-        padding: 0 8px;
-        border-radius: 999px;
-        background: var(--color-gray-100);
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 20px;
-        vertical-align: 1px;
-        cursor: pointer;
-        user-select: none;
-        -webkit-user-select: none;
-      }
-      #doc li.collapsed:hover::after {
-        background: var(--color-gray-200);
-        color: var(--ink);
-      }
-      /* Disclosure toggle shown next to the hovered item that has children. */
-      #fold {
-        position: absolute;
-        z-index: 2;
-        display: none;
-        place-items: center;
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
-        color: var(--muted);
-      }
-      #fold.show {
-        display: grid;
-      }
-      #fold:hover {
-        background: var(--color-gray-100);
-        color: var(--ink);
-      }
-      #fold svg {
-        width: 12px;
-        height: 12px;
-        fill: currentColor;
-      }
-      #fold.closed svg {
-        transform: rotate(-90deg);
-      }
-      @media (prefers-reduced-motion: no-preference) {
-        #fold svg {
-          transition: transform 0.12s;
-        }
-      }
-
       /* Boxes and arrows. */
       #shapes {
         position: absolute;
@@ -706,9 +642,6 @@
       <div id="shapes"></div>
       <div id="drawpad" aria-hidden="true"></div>
       <div id="marquee" aria-hidden="true"></div>
-      <button id="fold" type="button" tabindex="-1" aria-label="子項目をたたむ">
-        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4h8L6 9z" /></svg>
-      </button>
     </main>
 
     <nav class="toolbar" aria-label="ツール">
@@ -777,8 +710,6 @@
         <dd>一段戻す（いちばん外側なら箇条書きをやめる）</dd>
         <dt><kbd class="mod">⌥</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd><kbd>↓</kbd></dt>
         <dd>行を上下に入れ替える（子項目ごと）</dd>
-        <dt>行の左の ▾ / 黒丸をクリック・<kbd class="mod">⌘</kbd>+<kbd>Enter</kbd></dt>
-        <dd>子項目をたたむ / ひらく。たたんだ項目は黒丸に輪が付き、「○件」を押してもひらける</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> / <kbd>7</kbd></dt>
         <dd>箇条書き / 番号付きリスト</dd>
       </dl>
@@ -991,8 +922,6 @@
                   }
                 }
               }
-              if (name === "li" && !paste && n.classList.contains("collapsed"))
-                e.className = "collapsed";
               host.append(e);
               if (name !== "br") walk(n, e);
             }
@@ -1357,7 +1286,6 @@
           for (const li of items) {
             const prev = li.previousElementSibling;
             if (!prev || prev.tagName !== "LI") continue;
-            prev.classList.remove("collapsed");
             let sub = subList(prev);
             if (!sub) sub = prev.appendChild(document.createElement(li.parentNode.tagName));
             sub.append(li);
@@ -1432,7 +1360,7 @@
           if (p && p.tagName === "LI") {
             for (;;) {
               const s = subList(p);
-              const last = s && !p.classList.contains("collapsed") && [...s.children].filter((c) => c.tagName === "LI").pop();
+              const last = s && [...s.children].filter((c) => c.tagName === "LI").pop();
               if (!last) return p;
               p = last;
             }
@@ -1459,7 +1387,7 @@
             li.before(n);
           } else if (atEndOf(li, r)) {
             n.append(document.createElement("br"));
-            if (sub && !li.classList.contains("collapsed")) sub.prepend(n);
+            if (sub) sub.prepend(n);
             else li.after(n);
             caretAt(n);
           } else {
@@ -1577,13 +1505,6 @@
 
         function changed() {
           normalize();
-          for (const li of doc.querySelectorAll("li[data-hidden]"))
-            if (!li.classList.contains("collapsed")) delete li.dataset.hidden;
-          for (const li of doc.querySelectorAll("li.collapsed")) {
-            const n = subList(li) ? subList(li).querySelectorAll("li").length : 0;
-            if (n) li.dataset.hidden = n;
-            else li.classList.remove("collapsed");
-          }
           layoutPage();
           updateToolbar();
           scheduleSave();
@@ -2164,7 +2085,6 @@
             return;
           }
           finishBoxEdit();
-          if (toggleFold(e)) return;
           lastKind = "";
           if (e.pointerType === "mouse" && !overText(e)) {
             e.preventDefault();
@@ -2283,63 +2203,6 @@
         }
         page.addEventListener("pointerup", endDrag);
         page.addEventListener("pointercancel", endDrag);
-        // Folding: the bullet, the hover toggle, the "N件" pill and ⌘Enter all switch it.
-        function setFold(li, closed) {
-          if (!li || !subList(li)) return;
-          record();
-          const r = sel(),
-            inside = closed && r && subList(li).contains(r.startContainer);
-          li.classList.toggle("collapsed", closed);
-          changed();
-          if (inside) caretAt(li, true);
-          placeFold(foldLi);
-        }
-        function toggleFold(e) {
-          const li = e.target;
-          if (li.tagName !== "LI" || !doc.contains(li) || !subList(li)) return false;
-          const r = li.getBoundingClientRect(),
-            lh = parseFloat(getComputedStyle(li).lineHeight) || 28,
-            rects = [...inlineRange(li).getClientRects()],
-            end = rects.length ? rects[rects.length - 1] : null,
-            onBullet = e.clientX <= r.left + 24 && e.clientY <= r.top + lh,
-            onPill =
-              li.classList.contains("collapsed") && end && e.clientX > end.right && e.clientY >= end.top - 4 && e.clientY <= end.bottom + 4;
-          if (!onBullet && !onPill) return false;
-          e.preventDefault();
-          setFold(li, !li.classList.contains("collapsed"));
-          return true;
-        }
-        const foldBtn = $("#fold");
-        let foldLi = null;
-        function placeFold(li) {
-          foldLi = li && li.isConnected && subList(li) ? li : null;
-          foldBtn.classList.toggle("show", !!foldLi);
-          if (!foldLi) return;
-          const pr = page.getBoundingClientRect(),
-            r = foldLi.getBoundingClientRect(),
-            lh = parseFloat(getComputedStyle(foldLi).lineHeight) || 28,
-            closed = foldLi.classList.contains("collapsed");
-          foldBtn.style.left = r.left - pr.left - 22 + "px";
-          foldBtn.style.top = r.top - pr.top + (lh - 20) / 2 + "px";
-          foldBtn.classList.toggle("closed", closed);
-          foldBtn.title = closed ? "子項目をひらく（⌘Enter）" : "子項目をたたむ（⌘Enter）";
-          foldBtn.setAttribute("aria-label", closed ? "子項目をひらく" : "子項目をたたむ");
-        }
-        page.addEventListener("pointermove", (e) => {
-          if (drag || e.pointerType !== "mouse" || e.target === foldBtn || foldBtn.contains(e.target)) return;
-          const li = closestLi(e.target);
-          if (!li || !subList(li)) return placeFold(null);
-          const r = li.getBoundingClientRect(),
-            lh = parseFloat(getComputedStyle(li).lineHeight) || 28;
-          placeFold(e.clientY <= r.top + lh + 2 ? li : null);
-        });
-        page.addEventListener("pointerleave", () => placeFold(null));
-        foldBtn.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (foldLi) setFold(foldLi, !foldLi.classList.contains("collapsed"));
-        });
-
         // Document events.
         doc.addEventListener("beforeinput", (e) => {
           if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
@@ -2356,7 +2219,6 @@
           );
         });
         doc.addEventListener("input", (e) => {
-          placeFold(null);
           if (e.inputType === "insertFromComposition") restoreRemovedItem();
           else if (/^delete/.test(e.inputType) && e.inputType !== "deleteCompositionText") restoreRemovedItem();
           if (e.isComposing) return scheduleSave();
@@ -2412,11 +2274,7 @@
           else if (e.key === "Tab" && !mod) e.shiftKey ? outdent() : indent();
           else if (e.altKey && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown"))
             moveItem(e.key === "ArrowUp" ? -1 : 1);
-          else if (e.key === "Enter" && mod && !e.altKey) {
-            const r = sel(),
-              li = r && closestLi(r.startContainer);
-            if (li && subList(li)) setFold(li, !li.classList.contains("collapsed"));
-          } else if (e.key === "Enter" && !e.shiftKey && !mod && !e.altKey) done = enterInItem();
+          else if (e.key === "Enter" && !e.shiftKey && !mod && !e.altKey) done = enterInItem();
           else if (e.key === "Backspace" && !mod && !e.altKey) done = backspaceInItem();
           else if (e.key === "Escape") {
             if (tool || !help.hidden) {
