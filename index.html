@@ -107,38 +107,36 @@
         position: relative;
         padding-left: 24px;
       }
+      /* Each marker fills a 24px box (the dot is a background), so the whole box is the
+         click target that folds an item with children. */
+      #doc li {
+        --mark: radial-gradient(circle, var(--ink) 0 3px, transparent 3.5px);
+        --mark-size: 100% 100%;
+      }
+      #doc :is(ul, ol) ul > li {
+        --mark: radial-gradient(circle, transparent 0 2.2px, var(--ink) 2.7px 3.7px, transparent 4.2px);
+      }
+      #doc :is(ul, ol) :is(ul, ol) ul > li {
+        --mark: linear-gradient(var(--ink), var(--ink));
+        --mark-size: 6px 6px;
+      }
+      #doc :is(ul, ol) :is(ul, ol) :is(ul, ol) ul > li {
+        --mark: radial-gradient(circle, var(--ink) 0 3px, transparent 3.5px);
+        --mark-size: 100% 100%;
+      }
       #doc li::before {
         content: "";
         position: absolute;
         box-sizing: border-box;
-      }
-      #doc ul > li::before {
-        left: 8px;
-        top: calc(var(--line) * 0.5em - 3px);
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--ink);
-      }
-      #doc :is(ul, ol) ul > li::before {
-        left: 7.5px;
-        top: calc(var(--line) * 0.5em - 3.5px);
-        width: 7px;
-        height: 7px;
-        background: transparent;
-        border: 1.5px solid var(--ink);
-      }
-      #doc :is(ul, ol) :is(ul, ol) ul > li::before {
-        left: 8px;
-        top: calc(var(--line) * 0.5em - 3px);
-        width: 6px;
-        height: 6px;
-        border: 0;
-        border-radius: 1px;
-        background: var(--ink);
-      }
-      #doc :is(ul, ol) :is(ul, ol) :is(ul, ol) ul > li::before {
-        border-radius: 50%;
+        left: 0;
+        top: calc(var(--line) * 0.5em - 12px);
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background-image: var(--mark);
+        background-size: var(--mark-size);
+        background-position: center;
+        background-repeat: no-repeat;
       }
       #doc ol {
         counter-reset: item;
@@ -148,12 +146,40 @@
       }
       #doc ol > li::before {
         content: counter(item) ".";
-        left: -6px;
+        left: -4px;
         top: 0;
-        width: 24px;
+        height: auto;
+        padding-right: 4px;
+        background: none;
         text-align: right;
         color: var(--muted);
         font-variant-numeric: tabular-nums;
+      }
+      /* Folded: children hidden, the marker sits on a gray disc (numbers on a gray tile). */
+      #doc li.collapsed > :is(ul, ol) {
+        display: none;
+      }
+      #doc ul > li.collapsed::before {
+        background-image: var(--mark), radial-gradient(circle, var(--color-gray-300) 0 8.5px, transparent 9px);
+        background-size: var(--mark-size), 100% 100%;
+      }
+      #doc ol > li.collapsed::before {
+        background: var(--color-gray-200);
+        color: var(--ink);
+        font-weight: 700;
+      }
+      #doc.on-marker {
+        cursor: pointer;
+      }
+      #marker-hover {
+        position: absolute;
+        z-index: 1;
+        display: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.08);
+        pointer-events: none;
       }
       #doc li > :is(ul, ol) {
         margin-left: -13px;
@@ -642,6 +668,7 @@
       <div id="shapes"></div>
       <div id="drawpad" aria-hidden="true"></div>
       <div id="marquee" aria-hidden="true"></div>
+      <div id="marker-hover" aria-hidden="true"></div>
     </main>
 
     <nav class="toolbar" aria-label="ツール">
@@ -710,6 +737,8 @@
         <dd>一段戻す（いちばん外側なら箇条書きをやめる）</dd>
         <dt><kbd class="mod">⌥</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd><kbd>↓</kbd></dt>
         <dd>行を上下に入れ替える（子項目ごと）</dd>
+        <dt>子項目のある行の黒丸・番号をクリック</dt>
+        <dd>子項目をたたむ / ひらく。たたんだ行は黒丸のまわりが灰色の丸になる</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> / <kbd>7</kbd></dt>
         <dd>箇条書き / 番号付きリスト</dd>
       </dl>
@@ -922,6 +951,7 @@
                   }
                 }
               }
+              if (name === "li" && !paste && n.classList.contains("collapsed")) e.className = "collapsed";
               host.append(e);
               if (name !== "br") walk(n, e);
             }
@@ -1286,6 +1316,7 @@
           for (const li of items) {
             const prev = li.previousElementSibling;
             if (!prev || prev.tagName !== "LI") continue;
+            prev.classList.remove("collapsed");
             let sub = subList(prev);
             if (!sub) sub = prev.appendChild(document.createElement(li.parentNode.tagName));
             sub.append(li);
@@ -1360,7 +1391,7 @@
           if (p && p.tagName === "LI") {
             for (;;) {
               const s = subList(p);
-              const last = s && [...s.children].filter((c) => c.tagName === "LI").pop();
+              const last = s && !p.classList.contains("collapsed") && [...s.children].filter((c) => c.tagName === "LI").pop();
               if (!last) return p;
               p = last;
             }
@@ -1387,7 +1418,7 @@
             li.before(n);
           } else if (atEndOf(li, r)) {
             n.append(document.createElement("br"));
-            if (sub) sub.prepend(n);
+            if (sub && !li.classList.contains("collapsed")) sub.prepend(n);
             else li.after(n);
             caretAt(n);
           } else {
@@ -1505,6 +1536,7 @@
 
         function changed() {
           normalize();
+          for (const li of doc.querySelectorAll("li.collapsed")) if (!subList(li)) li.classList.remove("collapsed");
           layoutPage();
           updateToolbar();
           scheduleSave();
@@ -2085,6 +2117,7 @@
             return;
           }
           finishBoxEdit();
+          if (toggleFold(e)) return;
           lastKind = "";
           if (e.pointerType === "mouse" && !overText(e)) {
             e.preventDefault();
@@ -2203,6 +2236,54 @@
         }
         page.addEventListener("pointerup", endDrag);
         page.addEventListener("pointercancel", endDrag);
+        // Folding: clicking the marker of an item with children hides or shows them.
+        const markerBox = $("#marker-hover");
+        let markerLi = null;
+        // The hit area reaches a little outside the item, so also look just to the right.
+        function markerAt(e) {
+          const near = document.elementFromPoint(e.clientX + 8, e.clientY);
+          for (const li of [e.target.closest?.("#doc li"), near && near.closest?.("#doc li")]) {
+            if (!li || !subList(li)) continue;
+            const r = li.getBoundingClientRect(),
+              lh = parseFloat(getComputedStyle(li).lineHeight) || 28;
+            if (e.clientX >= r.left - 6 && e.clientX <= r.left + 26 && e.clientY >= r.top && e.clientY <= r.top + lh) return li;
+          }
+          return null;
+        }
+        function showMarkerHover(li) {
+          markerLi = li;
+          doc.classList.toggle("on-marker", !!li);
+          markerBox.style.display = li ? "block" : "none";
+          if (!li) return;
+          const pr = page.getBoundingClientRect(),
+            r = li.getBoundingClientRect(),
+            lh = parseFloat(getComputedStyle(li).lineHeight) || 28,
+            ol = li.parentNode.tagName === "OL";
+          markerBox.style.left = r.left - pr.left + (ol ? -4 : 0) + "px";
+          markerBox.style.top = r.top - pr.top + lh / 2 - 12 + "px";
+        }
+        doc.addEventListener("pointermove", (e) => {
+          const li = e.pointerType === "mouse" && !drag ? markerAt(e) : null;
+          if (li !== markerLi) showMarkerHover(li);
+        });
+        doc.addEventListener("pointerleave", () => showMarkerHover(null));
+        function setFold(li, closed) {
+          record();
+          const r = sel(),
+            inside = closed && r && subList(li).contains(r.startContainer);
+          li.classList.toggle("collapsed", closed);
+          changed();
+          if (inside) caretAt(li, true);
+          if (markerLi) showMarkerHover(markerLi);
+        }
+        function toggleFold(e) {
+          const li = markerAt(e);
+          if (!li) return false;
+          e.preventDefault();
+          setFold(li, !li.classList.contains("collapsed"));
+          return true;
+        }
+
         // Document events.
         doc.addEventListener("beforeinput", (e) => {
           if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
@@ -2219,6 +2300,7 @@
           );
         });
         doc.addEventListener("input", (e) => {
+          showMarkerHover(null);
           if (e.inputType === "insertFromComposition") restoreRemovedItem();
           else if (/^delete/.test(e.inputType) && e.inputType !== "deleteCompositionText") restoreRemovedItem();
           if (e.isComposing) return scheduleSave();
