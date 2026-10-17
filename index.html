@@ -666,6 +666,13 @@
             color 0.12s;
         }
       }
+      /* Inside Maruni Repos the app owns the file: no new/save/open, and saving is automatic. */
+      .embedded [data-cmd="new"],
+      .embedded [data-cmd="save"],
+      .embedded [data-cmd="open"],
+      .embedded [data-cmd="open"] + .sep {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -836,6 +843,10 @@
           RED = "#ce0000",
           SVG_NS = "http://www.w3.org/2000/svg";
         const $ = (s) => document.querySelector(s);
+        // Set when the page runs inside the Maruni Repos app, which hands over one memo file and saves every change.
+        const host = window.webkit?.messageHandlers?.maruniRepos || null;
+        let hostFile = "";
+        if (host) document.documentElement.classList.add("embedded");
         const page = $("#page"),
           doc = $("#doc"),
           layer = $("#shapes"),
@@ -1559,6 +1570,13 @@
         }
         function save() {
           clearTimeout(saveTimer);
+          if (host) {
+            if (hostFile) {
+              host.postMessage({ type: "save", text: hostText() });
+              dirty = false;
+            }
+            return;
+          }
           try {
             localStorage.setItem(
               KEY,
@@ -2420,7 +2438,7 @@
         addEventListener("drop", async (e) => {
           e.preventDefault();
           const f = e.dataTransfer?.files?.[0];
-          if (!f) return;
+          if (!f || host) return;
           // The handle has to be requested while the drop event is still running.
           const pending = e.dataTransfer.items?.[0]?.getAsFileSystemHandle?.();
           if (!(await settleCurrent())) return;
@@ -2571,6 +2589,10 @@
             1,
           );
         }
+        // Like fileText, but leaves a box being typed in open, since autosave runs while typing.
+        function hostText() {
+          return JSON.stringify({ kind: FILE_KIND, v: 2, savedAt: new Date().toISOString(), html: doc.innerHTML, shapes }, null, 1);
+        }
         function showFileTitle() {
           document.title = fileLabel ? `${fileLabel.replace(/\.json$/i, "")} – メモ` : "メモ";
         }
@@ -2607,6 +2629,7 @@
           } catch {}
         }
         async function remember(handle, name, text) {
+          if (host) return;
           try {
             let hit = null;
             for (const r of await recentList()) {
@@ -2637,6 +2660,12 @@
 
         // Returns true when the memo was written somewhere.
         async function saveFile(saveAs) {
+          if (host) {
+            finishBoxEdit();
+            save();
+            toast("保存しました");
+            return true;
+          }
           const text = fileText();
           if (window.showSaveFilePicker) {
             try {
@@ -2845,7 +2874,7 @@
             let act = null;
             if (mod && !e.altKey) {
               if (c === "KeyS") act = () => saveFile(e.shiftKey);
-              else if (c === "KeyO") act = e.shiftKey ? () => showRecent(recentPanel.hidden) : chooseFile;
+              else if (c === "KeyO" && !host) act = e.shiftKey ? () => showRecent(recentPanel.hidden) : chooseFile;
               else if (c === "KeyH" && e.shiftKey) act = toggleHighlight;
               else if (c === "KeyE" && e.shiftKey) act = toggleRed;
               else if (c === "Digit8" && e.shiftKey) act = text(() => toggleList("UL"));
@@ -2954,13 +2983,51 @@
           return {};
         }
 
-        const saved = load();
+        if (host) doc.innerHTML = "<div><br></div>";
+        const saved = host ? {} : load();
         renderShapes();
         changed();
         if (!restoreCaretPath(saved.caret)) caretAt(doc.lastElementChild, true);
         if (num(saved.scroll)) scrollTo(0, saved.scroll);
         dirty = !!saved.dirty;
-        restoreFile(saved.fileKey);
+        if (!host) restoreFile(saved.fileKey);
+        if (host) {
+          // The app calls open() with the file's name and text once the page says it is ready.
+          window.maruniMemoHost = {
+            open(name, text) {
+              let d = null;
+              try {
+                d = text ? JSON.parse(text) : { kind: FILE_KIND, html: "<div><br></div>", shapes: [] };
+              } catch {}
+              if (!d || d.kind !== FILE_KIND || typeof d.html !== "string") {
+                hostFile = "";
+                toast("このメモで保存したファイルではないため、開けません");
+                return false;
+              }
+              doc.innerHTML = clean(d.html) || "<div><br></div>";
+              shapes = validShapes(d.shapes);
+              picked.clear();
+              flattenBlocks();
+              renderShapes();
+              changed();
+              clearTimeout(saveTimer);
+              undoStack.length = 0;
+              redoStack.length = 0;
+              hostFile = name;
+              fileLabel = name;
+              showFileTitle();
+              dirty = false;
+              caretAt(doc.lastElementChild, true);
+              scrollTo(0, 0);
+              return true;
+            },
+            flush() {
+              finishBoxEdit();
+              save();
+            },
+          };
+          host.postMessage({ type: "ready" });
+        }
         addEventListener("resize", layoutPage);
         addEventListener("pagehide", save);
         document.addEventListener("visibilitychange", () => {
