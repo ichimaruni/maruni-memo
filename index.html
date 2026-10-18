@@ -508,7 +508,8 @@
       .pop .pick:hover {
         background: var(--color-gray-50);
       }
-      #ask {
+      #ask,
+      #conflict {
         width: min(420px, calc(100vw - 32px));
         padding: 20px;
         border: 1px solid var(--border);
@@ -518,30 +519,36 @@
         font-size: 14px;
         line-height: 1.6;
       }
-      #ask::backdrop {
+      #ask::backdrop,
+      #conflict::backdrop {
         background: rgba(0, 0, 0, 0.2);
       }
-      #ask p {
+      #ask p,
+      #conflict p {
         margin: 0 0 8px;
       }
-      #ask .sub {
+      #ask .sub,
+      #conflict .sub {
         color: var(--muted);
         font-size: 13px;
       }
-      #ask .actions {
+      #ask .actions,
+      #conflict .actions {
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: 8px;
         margin-top: 16px;
       }
-      #ask button {
+      #ask button,
+      #conflict button {
         padding: 6px 12px;
         border: 1px solid var(--border);
         border-radius: 8px;
         font-size: 13px;
       }
-      #ask button.primary {
+      #ask button.primary,
+      #conflict button.primary {
         border-color: var(--ink);
         background: var(--ink);
         color: var(--color-white);
@@ -833,7 +840,7 @@
         <dt>紙に＋のボタン</dt>
         <dd>新しいメモにする（今のメモはファイルに上書きしてから閉じる。未保存なら確認）</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>S</kbd></dt>
-        <dd>ファイルに保存（デスクトップやダウンロードなど）。2回目からは同じファイルに上書き</dd>
+        <dd>ファイルに保存（デスクトップやダウンロードなど）。2回目からは同じファイルに上書き。ほかで変更されていたら、上書きか読み込みかを確認</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></dt>
         <dd>別のファイルに保存</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>O</kbd> / ドロップ</dt>
@@ -860,6 +867,17 @@
           <button value="cancel" type="submit">やめる</button>
           <button value="discard" type="submit">保存しない</button>
           <button value="save" type="submit" class="primary" autofocus>保存する</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="conflict" aria-labelledby="conflict-title">
+      <form method="dialog">
+        <p id="conflict-title"><b>このファイルは、開いたあとに別の場所で変更されています。</b></p>
+        <p class="sub">上書きすると、別の場所での変更は消えます。読み込むと、こちらの変更が消えます（すぐ後なら ⌘Z で戻せます）。</p>
+        <div class="actions">
+          <button value="cancel" type="submit">やめる</button>
+          <button value="reload" type="submit">別の場所の変更を読み込む</button>
+          <button value="overwrite" type="submit" class="primary">上書きする</button>
         </div>
       </form>
     </dialog>
@@ -1612,7 +1630,7 @@
           try {
             localStorage.setItem(
               KEY,
-              JSON.stringify({ v: 2, html: doc.innerHTML, shapes, caret: caretPath(), scroll: scrollY, fileKey, dirty }),
+              JSON.stringify({ v: 2, html: doc.innerHTML, shapes, caret: caretPath(), scroll: scrollY, fileKey, fileStamp, dirty }),
             );
           } catch {
             toast("保存できません。ブラウザの保存容量を確認してください。");
@@ -2601,6 +2619,7 @@
           if (!(await settleCurrent())) return;
           record();
           fileHandle = null;
+          fileStamp = null;
           fileKey = null;
           fileLabel = "";
           showFileTitle();
@@ -2625,7 +2644,10 @@
         const FILE_KIND = "maruni-memo",
           FILE_TYPES = [{ description: "メモ", accept: { "application/json": [".json"] } }],
           RECENT_LIMIT = 20;
+        // fileStamp is the file's lastModified when this page last read or wrote it, so a
+        // save can tell when someone else changed the file in the meantime.
         let fileHandle = null,
+          fileStamp = null,
           fileKey = null,
           fileLabel = "",
           dirty = false;
@@ -2712,8 +2734,17 @@
           return (await h.requestPermission(o)) === "granted";
         }
 
-        // Returns true when the memo was written somewhere.
-        async function saveFile(saveAs) {
+        const conflict = $("#conflict");
+        function askConflict() {
+          return new Promise((resolve) => {
+            conflict.returnValue = "cancel";
+            conflict.onclose = () => resolve(conflict.returnValue || "cancel");
+            conflict.showModal();
+          });
+        }
+        // Returns true when the memo was written somewhere (or, while switching away,
+        // when the other version was kept instead).
+        async function saveFile(saveAs, leaving = false) {
           if (host) {
             finishBoxEdit();
             save();
@@ -2723,20 +2754,44 @@
           const text = fileText();
           if (window.showSaveFilePicker) {
             try {
-              if (!fileHandle || saveAs)
+              if (!fileHandle || saveAs) {
                 fileHandle = await showSaveFilePicker({
                   id: FILE_KIND,
                   startIn: "desktop",
                   suggestedName: fileName(),
                   types: FILE_TYPES,
                 });
-              else if (!(await allowed(fileHandle))) {
-                toast("ファイルへの書き込みが許可されませんでした");
-                return false;
+                fileStamp = null;
+              } else {
+                if (!(await allowed(fileHandle))) {
+                  toast("ファイルへの書き込みが許可されませんでした");
+                  return false;
+                }
+                let current;
+                try {
+                  current = await fileHandle.getFile();
+                } catch (err) {
+                  if (err.name !== "NotFoundError") throw err;
+                  toast("ファイルが見つかりません。移動か削除された可能性があります。⌘⇧S で別の場所に保存してください");
+                  return false;
+                }
+                if (fileStamp && current.lastModified !== fileStamp) {
+                  const choice = await askConflict();
+                  if (choice === "reload") {
+                    if (leaving) {
+                      dirty = false;
+                      return true;
+                    }
+                    await openFile(current, fileHandle);
+                    return false;
+                  }
+                  if (choice !== "overwrite") return false;
+                }
               }
               const w = await fileHandle.createWritable();
               await w.write(text);
               await w.close();
+              fileStamp = (await fileHandle.getFile()).lastModified;
               dirty = false;
               await remember(fileHandle, fileHandle.name, text);
               toast(`「${fileHandle.name}」に保存しました`);
@@ -2772,7 +2827,7 @@
         async function settleCurrent() {
           finishBoxEdit();
           if (!dirty) return true;
-          if (fileHandle) return saveFile(false);
+          if (fileHandle) return saveFile(false, true);
           if (blank(doc.textContent) && !shapes.length) return true;
           const choice = await askUnsaved();
           if (choice === "save") return saveFile(true);
@@ -2818,6 +2873,7 @@
           caretAt(doc.lastElementChild, true);
           scrollTo(0, 0);
           fileHandle = handle;
+          fileStamp = handle ? file.lastModified : null;
           dirty = false;
           await remember(handle, file.name, text);
           toast(`「${file.name}」を開きました（⌘Z で元に戻せます）`);
@@ -2899,7 +2955,7 @@
         recentPanel.querySelector(".pick").addEventListener("click", chooseFile);
         recentPanel.querySelector(".new").addEventListener("click", newMemo);
         document.addEventListener("pointerdown", (e) => {
-          if (!recentPanel.hidden && !e.target.closest("#recent, [data-cmd=open], #ask")) showRecent(false);
+          if (!recentPanel.hidden && !e.target.closest("#recent, [data-cmd=open], dialog")) showRecent(false);
         });
         async function restoreFile(key) {
           if (!key) return;
@@ -3047,6 +3103,7 @@
         if (!restoreCaretPath(saved.caret)) caretAt(doc.lastElementChild, true);
         if (num(saved.scroll)) scrollTo(0, saved.scroll);
         dirty = !!saved.dirty;
+        fileStamp = num(saved.fileStamp) ? saved.fileStamp : null;
         if (!host) restoreFile(saved.fileKey);
         if (host) {
           // The app calls open() with the file's name and text once the page says it is ready.
