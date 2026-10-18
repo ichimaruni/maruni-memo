@@ -826,7 +826,7 @@
         <dd>四角に文字を入れる</dd>
         <dt><kbd>Delete</kbd> / <kbd>Esc</kbd></dt>
         <dd>選んだ図形を消す / 選択・描画をやめる</dd>
-        <dt>空いている所からドラッグ / <kbd class="mod">⌘</kbd>+<kbd>A</kbd></dt>
+        <dt>文字のない高さからドラッグ / <kbd class="mod">⌘</kbd>+<kbd>A</kbd></dt>
         <dd>範囲の図形をまとめて選ぶ / 図形をすべて選ぶ（文字を書いている時は <kbd>Esc</kbd> のあと）。<kbd>Shift</kbd>+クリックで追加・解除</dd>
         <dt>ドラッグで移動・辺や角で大きさ変更</dt>
         <dd>ほかの四角の端・中心にそろい、赤い線が出る。<kbd class="mod">⌘</kbd> を押しながらで吸着なし、<kbd>Shift</kbd> で縦横だけに動かす</dd>
@@ -2088,21 +2088,14 @@
           const r = page.getBoundingClientRect();
           return { x: e.clientX - r.left, y: e.clientY - r.top };
         }
-        // Blank paper (not over a line of text) starts a range selection with the mouse.
-        function overText(e) {
-          const t = e.target;
-          if (!doc.contains(t) || t === doc) return false;
-          const blk = closestLi(t) || topBlock(t);
-          if (!blk) return false;
-          let r;
-          if (blk.tagName === "LI") r = inlineRange(blk);
-          else {
-            r = document.createRange();
-            r.selectNodeContents(blk);
-          }
-          return [...r.getClientRects()].some(
-            (rc) => e.clientY >= rc.top - 2 && e.clientY <= rc.bottom + 2 && e.clientX >= rc.left - 32 && e.clientX <= rc.right + 24,
-          );
+        // A mouse drag selects text, except when it starts at a height with no line of text
+        // (below the text or in a gap) while there are shapes: then it selects shapes.
+        function startsShapeRange(e) {
+          if (e.pointerType !== "mouse" || !shapes.length) return false;
+          return ![...doc.children].some((b) => {
+            const r = b.getBoundingClientRect();
+            return e.clientY >= r.top - 2 && e.clientY <= r.bottom + 2;
+          });
         }
         function placeCaret(x, y) {
           let r = document.caretRangeFromPoint?.(x, y);
@@ -2193,7 +2186,7 @@
           finishBoxEdit();
           if (toggleFold(e)) return;
           lastKind = "";
-          if (e.pointerType === "mouse" && !overText(e)) {
+          if (startsShapeRange(e)) {
             e.preventDefault();
             drag = { mode: "marquee", start: p, base: e.shiftKey ? new Set(picked) : new Set(), cx: e.clientX, cy: e.clientY };
             page.setPointerCapture(e.pointerId);
