@@ -841,6 +841,8 @@
         <dd>新しいメモにする（今のメモはファイルに上書きしてから閉じる。未保存なら確認）</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>S</kbd></dt>
         <dd>ファイルに保存（デスクトップやダウンロードなど）。2回目からは同じファイルに上書き。ほかで変更されていたら、上書きか読み込みかを確認</dd>
+        <dt>読み込み直し・タブに戻る</dt>
+        <dd>ファイルがほかで更新されていれば、未保存の変更がなければ最新にし、あれば確認</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></dt>
         <dd>別のファイルに保存</dd>
         <dt><kbd class="mod">⌘</kbd>+<kbd>O</kbd> / ドロップ</dt>
@@ -2744,7 +2746,7 @@
         }
         // Returns true when the memo was written somewhere (or, while switching away,
         // when the other version was kept instead).
-        async function saveFile(saveAs, leaving = false) {
+        async function saveFile(saveAs, leaving = false, force = false) {
           if (host) {
             finishBoxEdit();
             save();
@@ -2775,7 +2777,7 @@
                   toast("ファイルが見つかりません。移動か削除された可能性があります。⌘⇧S で別の場所に保存してください");
                   return false;
                 }
-                if (fileStamp && current.lastModified !== fileStamp) {
+                if (!force && fileStamp && current.lastModified !== fileStamp) {
                   const choice = await askConflict();
                   if (choice === "reload") {
                     if (leaving) {
@@ -2851,7 +2853,7 @@
           input.onchange = () => input.files[0] && openFile(input.files[0]);
           input.click();
         }
-        async function openFile(file, handle = null) {
+        async function openFile(file, handle = null, message = null) {
           let d = null,
             text = "";
           try {
@@ -2876,9 +2878,59 @@
           fileStamp = handle ? file.lastModified : null;
           dirty = false;
           await remember(handle, file.name, text);
-          toast(`「${file.name}」を開きました（⌘Z で元に戻せます）`);
+          toast(message || `「${file.name}」を開きました（⌘Z で元に戻せます）`);
           return true;
         }
+
+        // Catching up with the file: on load and when the tab comes back, a file changed
+        // elsewhere is loaded (no unsaved edits) or brings up the overwrite/load prompt.
+        let checking = false,
+          waitingForPermission = false,
+          declinedStamp = null;
+        async function checkFile(fromGesture = false) {
+          if (host || !fileHandle || !fileStamp || checking || editingBox || drag) return;
+          if (document.querySelector("dialog[open]")) return;
+          checking = true;
+          try {
+            const o = { mode: "read" };
+            let p = fileHandle.queryPermission ? await fileHandle.queryPermission(o) : "granted";
+            if (p !== "granted") {
+              // Chrome asks again after a reload unless "allow on every visit" was chosen;
+              // asking needs a click or key press, so wait for the next one.
+              waitingForPermission = true;
+              if (!fromGesture) return;
+              p = await fileHandle.requestPermission(o);
+              if (p !== "granted") return;
+            }
+            waitingForPermission = false;
+            let f;
+            try {
+              f = await fileHandle.getFile();
+            } catch (err) {
+              if (err.name === "NotFoundError") toast(`「${fileLabel}」が見つかりません。移動か削除された可能性があります`);
+              return;
+            }
+            if (f.lastModified === fileStamp || f.lastModified === declinedStamp) return;
+            if (!dirty) {
+              const y = scrollY;
+              await openFile(f, fileHandle, `「${f.name}」がほかで更新されたので、最新の内容にしました（⌘Z で戻せます）`);
+              scrollTo(0, y);
+              return;
+            }
+            const choice = await askConflict();
+            if (choice === "reload") await openFile(f, fileHandle);
+            else if (choice === "overwrite") await saveFile(false, false, true);
+            else declinedStamp = f.lastModified;
+          } finally {
+            checking = false;
+          }
+        }
+        addEventListener("focus", () => checkFile());
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") checkFile();
+        });
+        for (const type of ["pointerdown", "keydown"])
+          addEventListener(type, () => waitingForPermission && checkFile(true), true);
         async function switchTo(entry) {
           showRecent(false);
           if (entry.key === fileKey && !dirty) return;
@@ -3104,7 +3156,7 @@
         if (num(saved.scroll)) scrollTo(0, saved.scroll);
         dirty = !!saved.dirty;
         fileStamp = num(saved.fileStamp) ? saved.fileStamp : null;
-        if (!host) restoreFile(saved.fileKey);
+        if (!host) restoreFile(saved.fileKey).then(() => checkFile());
         if (host) {
           // The app calls open() with the file's name and text once the page says it is ready.
           window.maruniMemoHost = {
