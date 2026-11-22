@@ -2,8 +2,11 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <title>メモ</title>
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-title" content="マルニメモ" />
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
@@ -682,6 +685,46 @@
           height: 28px;
         }
       }
+      .pwa-only[hidden], #offline-status[hidden] {
+        display: none;
+      }
+      #install-memo {
+        text-decoration: underline;
+        padding: 4px 0;
+      }
+      #offline-status {
+        position: fixed;
+        top: max(6px, env(safe-area-inset-top));
+        right: max(8px, env(safe-area-inset-right));
+        z-index: 9;
+        pointer-events: none;
+        padding: 3px 7px;
+        border-radius: 6px;
+        background: var(--color-gray-100);
+        color: var(--ink);
+        font-size: 11px;
+      }
+      @media (max-width: 600px) {
+        #doc {
+          padding-top: calc(32px + env(safe-area-inset-top));
+          padding-left: max(20px, env(safe-area-inset-left));
+          padding-right: max(20px, env(safe-area-inset-right));
+          padding-bottom: calc(160px + env(safe-area-inset-bottom));
+        }
+        .toolbar {
+          bottom: calc(12px + env(safe-area-inset-bottom));
+          left: max(8px, env(safe-area-inset-left));
+          right: max(8px, env(safe-area-inset-right));
+        }
+        .help {
+          bottom: calc(72px + env(safe-area-inset-bottom));
+        }
+      }
+      @media (min-aspect-ratio: 4/5) and (min-width: 560px) and (min-height: 440px) {
+        .toolbar { bottom: auto; right: max(16px, env(safe-area-inset-right)); left: auto; }
+        #doc { padding-right: calc(96px + env(safe-area-inset-right)); }
+        .help { bottom: auto; }
+      }
       @media (prefers-reduced-motion: no-preference) {
         button {
           transition:
@@ -852,6 +895,12 @@
         <dt>自動保存</dt>
         <dd>ファイルとは別に、このブラウザにも常に保存されます</dd>
       </dl>
+      <div class="pwa-only" id="pwa-help" hidden>
+        <h2>ホーム画面・オフライン</h2>
+        <button type="button" id="install-memo" class="pwa-only" hidden>マルニメモをインストール</button>
+        <p id="install-guide" class="pwa-only" hidden>iPhone・iPadのSafariでは、共有メニューから「ホーム画面に追加」を選びます。Safariの下書きが表示されない場合は、元のタブでファイルに保存してからアプリで開いてください。</p>
+        <p id="offline-guide">オンラインで一度開くと、次からオフラインでも書けます。メモは端末内に残ります。大切な内容はファイルにも保存してください。</p>
+      </div>
     </section>
     <section id="recent" class="help pop" hidden aria-label="最近のファイル">
       <h2>最近のファイル</h2>
@@ -883,6 +932,7 @@
         </div>
       </form>
     </dialog>
+    <div id="offline-status" role="status" hidden>オフライン</div>
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script>
@@ -897,6 +947,46 @@
         const $ = (s) => document.querySelector(s);
         // Set when the page runs inside the Maruni Repos app, which hands over one memo file and saves every change.
         const host = window.webkit?.messageHandlers?.maruniRepos || null;
+        if (!host && window.isSecureContext && "serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+          const pwaHelp = document.querySelector("#pwa-help");
+          const installButton = document.querySelector("#install-memo");
+          const installGuide = document.querySelector("#install-guide");
+          const offlineStatus = document.querySelector("#offline-status");
+          const offlineGuide = document.querySelector("#offline-guide");
+          const display = matchMedia("(display-mode: standalone)");
+          const appleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+          const standalone = () => display.matches || navigator.standalone === true;
+          let install = null;
+          const refresh = () => {
+            installGuide.hidden = !appleMobile || standalone();
+            installButton.hidden = !install || standalone();
+            offlineStatus.hidden = navigator.onLine;
+          };
+          pwaHelp.hidden = false;
+          refresh();
+          display.addEventListener?.("change", refresh);
+          addEventListener("online", refresh);
+          addEventListener("offline", refresh);
+          addEventListener("beforeinstallprompt", (event) => {
+            event.preventDefault();
+            install = event;
+            refresh();
+          });
+          addEventListener("appinstalled", () => {
+            install = null;
+            refresh();
+          });
+          installButton.addEventListener("click", async () => {
+            const prompt = install;
+            install = null;
+            refresh();
+            try { await prompt?.prompt(); } catch { /* Browser no longer offers installation. */ }
+          });
+          navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(() => {
+            offlineGuide.textContent = "このブラウザではオフラインの準備ができませんでした。大切な内容はファイルにも保存してください。";
+          });
+        }
         let hostFile = "";
         if (host) document.documentElement.classList.add("embedded");
         const page = $("#page"),
